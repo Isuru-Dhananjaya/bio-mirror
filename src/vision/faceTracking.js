@@ -1,16 +1,14 @@
-export function initializeFaceMesh(videoElement, onResultsCallback) {
+export const initializeFaceMesh = (videoElement, onResultsCallback) => {
   const FaceMesh = window.FaceMesh;
   const Camera = window.Camera;
 
   const faceMesh = new FaceMesh({
-    locateFile: (file) => {
-      return `https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/${file}`;
-    }
+    locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/${file}`
   });
 
   faceMesh.setOptions({
     maxNumFaces: 1,
-    refineLandmarks: false,
+    refineLandmarks: true,
     minDetectionConfidence: 0.5,
     minTrackingConfidence: 0.5
   });
@@ -19,65 +17,80 @@ export function initializeFaceMesh(videoElement, onResultsCallback) {
 
   const camera = new Camera(videoElement, {
     onFrame: async () => {
-      await faceMesh.send({ image: videoElement });
+      if (videoElement && videoElement.videoWidth > 0) {
+        await faceMesh.send({ image: videoElement });
+      }
     },
     width: 640,
     height: 480
   });
 
   camera.start();
-
   return {
     stop: () => {
       camera.stop();
       faceMesh.close();
     }
   };
-}
+};
 
-// Temporary canvas for pixel extraction
-const canvas = document.createElement('canvas');
-const ctx = canvas.getContext('2d', { willReadFrequently: true });
+let roiCanvas = null;
+let lastNose = null;
 
-export function extractROI(videoElement, landmarks) {
-  canvas.width = videoElement.videoWidth || 640;
-  canvas.height = videoElement.videoHeight || 480;
+export const processFaceData = (videoElement, multiFaceLandmarks) => {
+  if (!multiFaceLandmarks || !multiFaceLandmarks[0]) return null;
+  const landmarks = multiFaceLandmarks[0];
+
+  // 1. Live Motion Tracking (Nose Tip: index 1)
+  const nose = landmarks[1];
+  let isMoving = false;
+  if (lastNose) {
+    const dist = Math.sqrt(Math.pow(nose.x - lastNose.x, 2) + Math.pow(nose.y - lastNose.y, 2));
+    if (dist > 0.008) isMoving = true; // Movement threshold
+  }
+  lastNose = { x: nose.x, y: nose.y };
+
+  // 2. Dynamic Masking (Tight Forehead Bounding Box)
+  if (!roiCanvas) {
+    roiCanvas = document.createElement('canvas');
+    roiCanvas.width = 64;
+    roiCanvas.height = 64;
+  }
+  const ctx = roiCanvas.getContext('2d', { willReadFrequently: true });
   
-  ctx.drawImage(videoElement, 0, 0, canvas.width, canvas.height);
-  
-  const getAverageColor = (cx, cy, size = 15) => {
-    const x = Math.max(0, Math.floor(cx * canvas.width) - Math.floor(size / 2));
-    const y = Math.max(0, Math.floor(cy * canvas.height) - Math.floor(size / 2));
-    
-    if (x + size > canvas.width || y + size > canvas.height) return {r:0, g:0, b:0};
-    
-    const imgData = ctx.getImageData(x, y, size, size).data;
-    
-    let r = 0, g = 0, b = 0;
-    let count = 0;
-    for (let i = 0; i < imgData.length; i += 4) {
-      r += imgData[i];
-      g += imgData[i + 1];
-      b += imgData[i + 2];
-      count++;
-    }
-    return { r: r / count, g: g / count, b: b / count };
-  };
+  // Strict forehead landmarks (excluding eyebrows & hair)
+  const top = Math.min(landmarks[10].y, landmarks[109].y);
+  const bottom = landmarks[9].y;
+  const left = landmarks[109].x;
+  const right = landmarks[338].x;
 
-  if (!landmarks || landmarks.length === 0) return null;
-  
-  const face = landmarks[0];
-  const forehead = getAverageColor(face[10].x, face[10].y, 20);
-  const leftCheek = getAverageColor(face[234].x, face[234].y, 20);
-  const rightCheek = getAverageColor(face[454].x, face[454].y, 20);
+  const x = Math.max(0, left * videoElement.videoWidth);
+  const y = Math.max(0, top * videoElement.videoHeight);
+  const w = (right - left) * videoElement.videoWidth;
+  const h = (bottom - top) * videoElement.videoHeight;
 
-  return {
-    r: (forehead.r + leftCheek.r + rightCheek.r) / 3,
-    g: (forehead.g + leftCheek.g + rightCheek.g) / 3,
-    b: (forehead.b + leftCheek.b + rightCheek.b) / 3,
-    timestamp: performance.now()
-  };
-}
+  if (w <= 0 || h <= 0) return null;
+
+  ctx.drawImage(videoElement, x, y, w, h, 0, 0, 64, 64);
+  const imgData = ctx.getImageData(0, 0, 64, 64).data;
+
+  let r = 0, g = 0, b = 0, count = 0;
+  for (let i = 0; i < imgData.length; i += 4) {
+    r += imgData[i];
+    g += imgData[i + 1];
+    b += imgData[i + 2];
+    count++;
+  }
+
+  const avgR = r / count;
+  const avgG = g / count;
+  const avgB = b / count;
+
+  // 3. Smart Light Detector (Luminance)
+  const brightness = (avgR + avgG + avgB) / 3;
+
+  return { r: avgR, g: avgG, b: avgB, brightness, isMoving };
+};
 
 // NEW: Visual Face Tracking HUD
 export function drawFaceMesh(ctx, face, width, height, status) {
@@ -140,4 +153,67 @@ export function drawFaceMesh(ctx, face, width, height, status) {
     ctx.lineWidth = 3;
     ctx.stroke();
   }
+}
+
+// NEW: Extreme WOW 3D Digital Twin Hologram
+export function drawHologram(ctx, face, width, height, bpm, status) {
+  ctx.clearRect(0, 0, width, height);
+
+  if (!face || status === 'IDLE' || status === 'REQUESTING_CAMERA') {
+    ctx.fillStyle = 'rgba(0, 240, 255, 0.3)';
+    ctx.font = '10px monospace';
+    ctx.textAlign = 'center';
+    ctx.fillText("AWAITING BIOMETRICS", width / 2, height / 2);
+    return;
+  }
+
+  // Determine Hologram Color based on Heart Rate
+  let r = 0, g = 240, b = 255; // Default: Cyber Cyan
+  if (bpm && bpm > 90) { 
+    r = 255; g = 80; b = 0; // High BPM: Orange/Red Glow
+  } else if (bpm && bpm > 75) { 
+    r = 0; g = 255; b = 65; // Moderate: Cyber Green Glow
+  }
+
+  // Find face boundaries to scale and center the 3D model
+  let minX = 1, maxX = 0, minY = 1, maxY = 0;
+  face.forEach(p => {
+    if (p.x < minX) minX = p.x;
+    if (p.x > maxX) maxX = p.x;
+    if (p.y < minY) minY = p.y;
+    if (p.y > maxY) maxY = p.y;
+  });
+  
+  const centerX = (minX + maxX) / 2;
+  const centerY = (minY + maxY) / 2;
+  const faceWidth = maxX - minX;
+  
+  // Scale factor to fit inside the canvas beautifully
+  const scale = (width * 0.7) / faceWidth;
+
+  // Draw 3D Point Cloud
+  face.forEach((point, i) => {
+    // Normalize, Scale, and Center
+    const x = (point.x - centerX) * scale + (width / 2);
+    const y = (point.y - centerY) * scale + (height / 2);
+    
+    // Z coordinate provides true 3D depth (closer to camera = bigger/brighter)
+    const depth = Math.max(0.1, 1 - (point.z * 5)); 
+    const size = depth * 1.5;
+    const opacity = Math.max(0.15, depth);
+
+    ctx.beginPath();
+    ctx.arc(x, y, size, 0, 2 * Math.PI);
+    ctx.fillStyle = `rgba(${r}, ${g}, ${b}, ${opacity})`;
+    
+    // Add heavy glowing effect to select key points for sci-fi look
+    if (i % 8 === 0) {
+      ctx.shadowBlur = 10;
+      ctx.shadowColor = `rgb(${r}, ${g}, ${b})`;
+    } else {
+      ctx.shadowBlur = 0;
+    }
+    
+    ctx.fill();
+  });
 }
