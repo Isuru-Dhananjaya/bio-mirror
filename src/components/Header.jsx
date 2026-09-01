@@ -1,10 +1,12 @@
 import React, { useState } from 'react';
-import { Activity, ShieldCheck, Camera, Volume2, VolumeX } from 'lucide-react';
+import { Activity, ShieldCheck, Camera, Volume2, VolumeX, LineChart as LineChartIcon, Globe } from 'lucide-react';
 import { toggleMute } from '../utils/audioHelper';
 import InstallPrompt from './InstallPrompt';
+import { useLanguage } from '../context/LanguageContext';
 
-export default function Header({ fps }) {
+export default function Header({ fps, onOpenHistory }) {
   const [muted, setMuted] = useState(false);
+  const { t, lang, setLang } = useLanguage();
 
   const handleMuteToggle = () => {
     const isNowMuted = toggleMute();
@@ -13,18 +15,32 @@ export default function Header({ fps }) {
 
   return (
     <header className="flex justify-between items-center p-4 border-b border-cyber-border bg-cyber-panel/80 backdrop-blur-md relative z-50 shadow-md">
-      <div className="flex items-center space-x-4">
-        <div className="p-2 bg-cyber-cyan/10 rounded-xl border border-cyber-cyan/30 shadow-[0_0_10px_rgba(0,240,255,0.2)]">
-          <Activity className="text-cyber-cyan animate-pulse" size={24} />
+      <div className="flex items-center">
+        <div className="flex items-center space-x-4">
+          <div className="p-2 bg-cyber-cyan/10 rounded-xl border border-cyber-cyan/30 shadow-[0_0_10px_rgba(0,240,255,0.2)]">
+            <Activity className="text-cyber-cyan animate-pulse" size={24} />
+          </div>
+          <div>
+            <h1 className="text-xl md:text-2xl font-black tracking-widest uppercase text-white drop-shadow-[0_0_8px_#00f0ff]">{t('title')}</h1>
+            <p className="text-[7px] md:text-[9px] text-cyber-cyan font-mono tracking-widest">{t('subtitle')}</p>
+          </div>
         </div>
-        <div>
-          <h1 className="text-2xl font-black tracking-widest uppercase text-white drop-shadow-[0_0_8px_#00f0ff]">Bio-Mirror</h1>
-          <p className="text-[9px] text-cyber-cyan font-mono tracking-widest">EDGE COMPUTING VITAL SIGNS</p>
-        </div>
+        
+        <InstallPrompt />
       </div>
       
-      <div className="flex items-center space-x-4">
-        <InstallPrompt />
+      <div className="flex items-center space-x-3 md:space-x-4">
+        {/* Language Switcher */}
+        <div className="hidden md:flex bg-black border border-cyber-cyan/30 rounded-lg overflow-hidden">
+          <button onClick={() => setLang('en')} className={`px-2 py-1 text-[9px] font-bold ${lang === 'en' ? 'bg-cyber-cyan text-black' : 'text-gray-400 hover:text-white'}`}>EN</button>
+          <button onClick={() => setLang('si')} className={`px-2 py-1 text-[9px] font-bold ${lang === 'si' ? 'bg-cyber-cyan text-black' : 'text-gray-400 hover:text-white'}`}>සිං</button>
+          <button onClick={() => setLang('ta')} className={`px-2 py-1 text-[9px] font-bold ${lang === 'ta' ? 'bg-cyber-cyan text-black' : 'text-gray-400 hover:text-white'}`}>தமிழ்</button>
+        </div>
+
+        <button onClick={onOpenHistory} className="flex items-center space-x-2 text-white bg-cyber-dark px-3 py-1.5 rounded-full border border-cyber-cyan/30 hover:border-cyber-cyan hover:shadow-[0_0_10px_#00f0ff] transition-all">
+          <LineChartIcon size={14} className="text-cyber-cyan" />
+          <span className="font-mono text-[10px] font-bold tracking-widest hidden lg:inline">{t('history')}</span>
+        </button>
         <button 
           onClick={handleMuteToggle} 
           className={`flex items-center space-x-2 transition-all duration-300 border px-4 py-1.5 rounded-full ${
@@ -35,20 +51,19 @@ export default function Header({ fps }) {
         >
           {muted ? <VolumeX size={14} /> : <Volume2 size={14} />}
           <span className="text-[10px] font-bold tracking-wider hidden md:inline">
-            {muted ? 'MUTED' : 'AUDIO'}
+            {muted ? t('muted') : t('audio')}
           </span>
         </button>
 
         {/* 100% PRIVATE Badge with Custom Cyber Tooltip */}
         <div className="hidden lg:flex relative group items-center space-x-2 text-cyber-green bg-cyber-green/10 px-3 py-1.5 rounded-full border border-cyber-green/20 cursor-help">
           <ShieldCheck size={14} />
-          <span className="font-mono text-[10px] font-bold">100% PRIVATE</span>
+          <span className="font-mono text-[10px] font-bold">{t('privateBadge')}</span>
           
           <div className="absolute top-full right-0 mt-3 w-48 opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none z-50">
             <div className="bg-cyber-dark border border-cyber-green/50 p-2 rounded shadow-[0_0_15px_rgba(0,255,65,0.3)] text-[10px] text-cyber-green font-mono text-center relative">
-              {/* Tooltip Arrow */}
               <div className="absolute -top-1.5 right-6 w-3 h-3 bg-cyber-dark border-t border-l border-cyber-green/50 rotate-45"></div>
-              All AI processing runs on your device locally. No video is ever sent to servers.
+              {t('privateTooltip')}
             </div>
           </div>
         </div>
@@ -60,9 +75,8 @@ export default function Header({ fps }) {
 
           <div className="absolute top-full right-0 mt-3 w-36 opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none z-50">
             <div className="bg-cyber-dark border border-cyber-cyan/50 p-2 rounded shadow-neon-cyan text-[10px] text-cyber-cyan font-mono text-center relative">
-              {/* Tooltip Arrow */}
               <div className="absolute -top-1.5 right-6 w-3 h-3 bg-cyber-dark border-t border-l border-cyber-cyan/50 rotate-45"></div>
-              Frames Per Second. Indicates AI speed & performance.
+              {t('fpsTooltip')}
             </div>
           </div>
         </div>

@@ -1,37 +1,36 @@
 import React from 'react';
+import { useLanguage } from '../context/LanguageContext';
 
-export default function VitalsCard({ title, value, unit, status, color = "cyan" }) {
-  const colorMap = {
-    green: "text-cyber-green drop-shadow-[0_0_8px_#00ff41]",
-    cyan: "text-cyber-cyan drop-shadow-[0_0_8px_#00f0ff]",
-    purple: "text-cyber-purple drop-shadow-[0_0_8px_#b800ff]",
-  };
+export default function VitalsCard({ title, value, unit, status, color, range }) {
+  const { t } = useLanguage();
   
-  const borderMap = {
-    green: "hover:border-cyber-green/50",
-    cyan: "hover:border-cyber-cyan/50",
-    purple: "hover:border-cyber-purple/50",
+  const colorMap = {
+    cyan: { text: 'text-cyber-cyan', border: 'border-cyber-cyan/30', bg: 'bg-cyber-cyan/10' },
+    purple: { text: 'text-cyber-purple', border: 'border-cyber-purple/30', bg: 'bg-cyber-purple/10' },
+    green: { text: 'text-cyber-green', border: 'border-cyber-green/30', bg: 'bg-cyber-green/10' }
   };
-
-  const textClass = colorMap[color] || colorMap.cyan;
-  const hoverClass = borderMap[color] || borderMap.cyan;
 
   return (
-    <div className={`bg-cyber-panel/60 backdrop-blur-md border border-cyber-border p-6 rounded-2xl shadow-lg flex flex-col justify-center items-center w-full md:flex-1 h-36 relative overflow-hidden transition-all duration-300 ${hoverClass} hover:bg-cyber-panel/90 group`}>
-      
-      <span className="text-gray-400 text-[10px] font-bold uppercase tracking-widest mb-3 text-center">{title}</span>
-      
-      <div className="flex items-baseline space-x-1">
-        <span className={`text-5xl font-black ${textClass}`}>
-          {value !== null ? value : '--'}
-        </span>
-        {unit && <span className="text-gray-500 text-xs font-bold tracking-widest ml-1">{unit}</span>}
-      </div>
-      
-      {status && (
-        <span className={`mt-4 px-4 py-1.5 rounded-full text-[9px] uppercase font-bold tracking-widest ${status.includes('SCANNING') || status.includes('CALCULATING') ? 'bg-cyber-cyan/10 text-cyber-cyan animate-pulse border border-cyber-cyan/20' : 'bg-gray-800/50 text-gray-400 border border-gray-700/50'}`}>
+    <div className="flex-1 min-w-[140px] bg-cyber-dark/80 backdrop-blur-md border border-cyber-border rounded-xl p-4 shadow-lg hover:border-cyber-cyan/50 transition-all duration-300 group">
+      <div className="flex justify-between items-start">
+        <h3 className="text-gray-400 text-[10px] font-bold tracking-widest uppercase">{title}</h3>
+        <span className={`text-[8px] px-2 py-0.5 rounded-full border font-bold tracking-widest ${colorMap[color].bg} ${colorMap[color].border} ${colorMap[color].text}`}>
           {status}
         </span>
+      </div>
+      
+      <div className="mt-3 flex items-baseline space-x-1">
+        <span className={`text-4xl md:text-5xl font-black font-mono tracking-tighter drop-shadow-[0_0_8px_currentColor] ${colorMap[color].text}`}>
+          {value !== null ? value : '--'}
+        </span>
+        <span className="text-gray-500 font-mono text-xs">{unit}</span>
+      </div>
+
+      {range && (
+        <div className="mt-4 pt-3 border-t border-gray-800 flex justify-between items-center opacity-70 group-hover:opacity-100 transition-opacity">
+          <span className="text-gray-500 text-[8px] uppercase tracking-widest">{t('normalRange')}</span>
+          <span className="text-gray-400 font-mono text-[9px] bg-black px-2 py-0.5 rounded border border-gray-800">{range}</span>
+        </div>
       )}
     </div>
   );

@@ -1,9 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { Download } from 'lucide-react';
+import { useLanguage } from '../context/LanguageContext';
 
 export default function InstallPrompt() {
   const [deferredPrompt, setDeferredPrompt] = useState(null);
   const [isInstalled, setIsInstalled] = useState(false);
+  const { t } = useLanguage();
 
   useEffect(() => {
     if (window.matchMedia('(display-mode: standalone)').matches) {
@@ -39,10 +41,10 @@ export default function InstallPrompt() {
   return (
     <button 
       onClick={handleInstall}
-      className="flex items-center space-x-2 bg-cyber-cyan/20 text-cyber-cyan border border-cyber-cyan/50 px-4 py-1.5 rounded-full font-bold tracking-widest shadow-[0_0_10px_#00f0ff] hover:bg-cyber-cyan/40 hover:shadow-[0_0_15px_#00f0ff] animate-pulse transition-all"
+      className="ml-4 md:ml-8 flex items-center space-x-2 bg-cyber-cyan text-black border border-cyber-cyan px-3 md:px-5 py-2 rounded-lg font-black tracking-widest shadow-[0_0_15px_rgba(0,240,255,0.5)] hover:bg-white hover:border-white hover:shadow-[0_0_25px_rgba(255,255,255,0.8)] animate-pulse hover:animate-none transition-all transform hover:-translate-y-0.5"
     >
-      <Download size={14} />
-      <span className="text-[10px] hidden sm:inline">INSTALL</span>
+      <Download size={16} />
+      <span className="text-[9px] md:text-xs uppercase">{t('install')}</span>
     </button>
   );
 }
