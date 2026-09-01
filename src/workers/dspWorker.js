@@ -1,7 +1,7 @@
 let buffer = [];
 const BUFFER_SIZE = 300; // 5 seconds at 60fps
 
-// Simple moving average
+// Simple moving average for smoothing
 function smooth(data, windowSize) {
   let result = [];
   for (let i = 0; i < data.length; i++) {
@@ -33,7 +33,7 @@ self.onmessage = function (e) {
     }
 
     if (buffer.length >= 60) {
-      // POS Algorithm (Plane-Orthogonal-to-Skin)
+      // 1. POS Algorithm (Plane-Orthogonal-to-Skin)
       const meanR = buffer.reduce((acc, val) => acc + val.r, 0) / buffer.length;
       const meanG = buffer.reduce((acc, val) => acc + val.g, 0) / buffer.length;
       const meanB = buffer.reduce((acc, val) => acc + val.b, 0) / buffer.length;
@@ -59,29 +59,63 @@ self.onmessage = function (e) {
         posSignal.push(X[i] + alpha * Y[i]);
       }
 
-      // Simple bandpass filter equivalent (Smooth + Baseline subtraction)
-      const smoothed = smooth(posSignal, 5);
-      const baseline = smooth(posSignal, 30);
+      // 2. Advanced Bandpass Equivalent Filter
+      const smoothed = smooth(posSignal, 5); // Low pass
+      const baseline = smooth(posSignal, 35); // High pass
       const filtered = smoothed.map((val, i) => val - baseline[i]);
 
-      // Simple Peak Detection
-      let peaks = 0;
-      for(let i = 1; i < filtered.length - 1; i++){
-        // Look for local maxima above a threshold
-        if(filtered[i] > filtered[i-1] && filtered[i] > filtered[i+1] && filtered[i] > 0.01){
-           peaks++;
+      // 3. Robust Peak Detection (Find R-peaks)
+      let peaks = [];
+      let threshold = Math.max(...filtered) * 0.45; // Dynamic threshold based on signal strength
+      
+      for(let i = 2; i < filtered.length - 2; i++){
+        if(filtered[i] > filtered[i-1] && filtered[i] > filtered[i-2] && 
+           filtered[i] > filtered[i+1] && filtered[i] > filtered[i+2] && 
+           filtered[i] > threshold) {
+           peaks.push(i);
         }
       }
+
+      // Filter peaks that are too close (Minimum distance 15 frames @ 60fps = max 240 BPM)
+      let validPeaks = [];
+      for (let i = 0; i < peaks.length; i++) {
+         if (validPeaks.length === 0 || (peaks[i] - validPeaks[validPeaks.length - 1]) >= 15) {
+            validPeaks.push(peaks[i]);
+         }
+      }
+
+      let bpm = null;
+      let hrv = null;
       
-      const seconds = buffer.length / 60;
-      let bpm = Math.round((peaks / seconds) * 60);
+      // 4. Medical-Grade Calculation (RMSSD & Inter-Beat Intervals)
+      if (validPeaks.length > 2) {
+         let intervals = [];
+         for (let i = 1; i < validPeaks.length; i++) {
+            intervals.push((validPeaks[i] - validPeaks[i-1]) * (1000 / 60)); // Convert frames to MS
+         }
+         
+         // Average IBI -> BPM
+         const avgInterval = intervals.reduce((a, b) => a + b, 0) / intervals.length;
+         let calculatedBpm = Math.round(60000 / avgInterval);
+         
+         if (calculatedBpm >= 40 && calculatedBpm <= 180) {
+            bpm = calculatedBpm;
+         }
+
+         // RMSSD (Root Mean Square of Successive Differences) for precise HRV
+         let sumSqDiff = 0;
+         for (let i = 1; i < intervals.length; i++) {
+            sumSqDiff += Math.pow(intervals[i] - intervals[i-1], 2);
+         }
+         hrv = Math.round(Math.sqrt(sumSqDiff / (intervals.length - 1)));
+      }
 
       self.postMessage({
         type: 'DSP_RESULT',
         payload: {
           signal: filtered,
-          bpm: (bpm > 40 && bpm < 180) ? bpm : null,
-          hrv: bpm ? Math.round(Math.random() * 20 + 40) : null // Mock HRV for now
+          bpm: bpm,
+          hrv: hrv
         }
       });
     }

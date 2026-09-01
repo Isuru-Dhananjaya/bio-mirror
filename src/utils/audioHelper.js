@@ -1,31 +1,41 @@
 let audioCtx;
+let isMuted = false;
 
-export function initAudio() {
+export const initAudio = () => {
   if (!audioCtx) {
     audioCtx = new (window.AudioContext || window.webkitAudioContext)();
   }
   if (audioCtx.state === 'suspended') {
     audioCtx.resume();
   }
-}
+};
 
-export function playThump() {
-  if (!audioCtx) return;
-  
-  const osc = audioCtx.createOscillator();
-  const gainNode = audioCtx.createGain();
+export const toggleMute = () => {
+  isMuted = !isMuted;
+  return isMuted;
+};
 
-  osc.type = 'sine';
-  // Low frequency sub-bass thump
-  osc.frequency.setValueAtTime(50, audioCtx.currentTime); 
-  osc.frequency.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.3);
+export const playThump = () => {
+  if (!audioCtx || isMuted) return;
   
-  gainNode.gain.setValueAtTime(0.5, audioCtx.currentTime);
-  gainNode.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.3);
-
-  osc.connect(gainNode);
-  gainNode.connect(audioCtx.destination);
-  
-  osc.start();
-  osc.stop(audioCtx.currentTime + 0.3);
-}
+  try {
+    const osc = audioCtx.createOscillator();
+    const gain = audioCtx.createGain();
+    
+    osc.connect(gain);
+    gain.connect(audioCtx.destination);
+    
+    osc.type = 'sine';
+    // Deep sub-bass frequencies for a realistic thump
+    osc.frequency.setValueAtTime(45, audioCtx.currentTime); 
+    osc.frequency.exponentialRampToValueAtTime(10, audioCtx.currentTime + 0.1);
+    
+    gain.gain.setValueAtTime(1, audioCtx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.1);
+    
+    osc.start(audioCtx.currentTime);
+    osc.stop(audioCtx.currentTime + 0.1);
+  } catch(e) {
+    console.error("Audio playback interrupted", e);
+  }
+};
