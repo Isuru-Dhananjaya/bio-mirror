@@ -16,7 +16,7 @@ export default function Header({ fps, onOpenHistory }) {
   };
 
   return (
-    <header className="flex justify-between items-center p-4 border-b border-cyber-border bg-cyber-panel/80 backdrop-blur-md relative z-50 shadow-md">
+    <header className="flex flex-col md:flex-row gap-4 md:gap-0 justify-between items-center p-4 border-b border-cyber-border bg-cyber-panel/80 backdrop-blur-md relative z-50 shadow-md">
       <div className="flex items-center">
         <div className="flex items-center space-x-4">
           <div className="p-2 bg-cyber-cyan/10 rounded-xl border border-cyber-cyan/30 shadow-[0_0_10px_rgba(0,240,255,0.2)]">
@@ -31,7 +31,7 @@ export default function Header({ fps, onOpenHistory }) {
         <InstallPrompt />
       </div>
       
-      <div className="flex items-center space-x-3 md:space-x-4">
+      <div className="flex flex-wrap justify-center items-center gap-2 md:gap-4">
         {/* Language Switcher (Visible on Mobile & Desktop) */}
         <div className="flex bg-black border border-cyber-cyan/30 rounded-lg overflow-hidden">
           <button onClick={() => setLang('en')} className={`px-1.5 md:px-2 py-1 text-[8px] md:text-[9px] font-bold ${lang === 'en' ? 'bg-cyber-cyan text-black' : 'text-gray-400 hover:text-white'}`}>EN</button>
