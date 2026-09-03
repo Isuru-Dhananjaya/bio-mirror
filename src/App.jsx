@@ -289,7 +289,7 @@ function App() {
               />
               <canvas 
                 ref={overlayRef}
-                className="absolute inset-0 w-full h-full pointer-events-none z-20"
+                className="absolute inset-0 w-full h-full object-cover pointer-events-none z-20"
                 style={{ transform: 'scaleX(-1)' }} 
               />
             </>
