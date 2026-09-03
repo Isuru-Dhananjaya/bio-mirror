@@ -264,7 +264,7 @@ function App() {
     <div className="h-screen w-screen flex flex-col overflow-hidden">
       <Header fps={fps} onOpenHistory={() => setIsHistoryOpen(true)} />
       
-      <main className="flex-1 p-4 md:p-6 flex flex-col lg:flex-row gap-6 relative z-10 overflow-y-auto">
+      <main className="flex-1 p-2 md:p-6 flex flex-col lg:flex-row gap-3 md:gap-6 relative z-10 overflow-y-auto">
         
         {/* The Cyber Mirror */}
         <div className="flex-1 min-h-[50vh] lg:min-h-0 lg:max-w-md xl:max-w-lg relative flex items-center justify-center border border-cyber-border bg-black rounded-2xl overflow-hidden shadow-[0_8px_30px_rgba(0,0,0,0.5)]">
@@ -297,7 +297,7 @@ function App() {
         </div>
 
         {/* Metrics & Graph */}
-        <div className="flex-1 flex flex-col gap-4 md:gap-6">
+        <div className="flex-1 flex flex-col gap-3 md:gap-6">
           
           {/* Lower Section: 3D Hologram + ECG Graph (Moved to top on mobile) */}
           <div className="flex flex-row gap-2 md:gap-6 flex-1 min-h-[120px] md:min-h-[200px] order-1 lg:order-3">
@@ -351,7 +351,7 @@ function App() {
 
           </div>
 
-          <div className="flex flex-row justify-between flex-wrap gap-4 order-2 lg:order-1">
+          <div className="flex flex-row justify-between flex-wrap gap-2 md:gap-4 order-2 lg:order-1">
             <VitalsCard 
               title={t('heartRate')} 
               value={status === 'COMPLETED' ? finalBpm : null} 
@@ -388,7 +388,7 @@ function App() {
           
           {/* Dynamic Medical Insight Alert */}
           {status === 'COMPLETED' && insight && (
-            <div className={`w-full p-4 rounded-xl border flex flex-col sm:flex-row items-start sm:items-center justify-between space-y-4 sm:space-y-0 sm:space-x-4 animate-fade-in ${insight.bg} ${insight.border} shadow-[0_0_15px_rgba(0,0,0,0.2)]`}>
+            <div className={`order-3 lg:order-2 w-full p-2 md:p-4 rounded-xl border flex flex-col sm:flex-row items-start sm:items-center justify-between space-y-3 sm:space-y-0 sm:space-x-4 animate-fade-in ${insight.bg} ${insight.border} shadow-[0_0_15px_rgba(0,0,0,0.2)]`}>
               <div className="flex items-start space-x-4">
                 <div className="shrink-0 mt-1">
                   <insight.icon size={24} className={insight.color} />
