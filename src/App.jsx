@@ -13,20 +13,30 @@ import { saveScanResult } from './utils/storageHelper';
 import { Info, AlertCircle, CheckCircle2, ShieldAlert, Activity } from 'lucide-react';
 import { useLanguage } from './context/LanguageContext';
 
-const getHealthInsight = (bpm, hrv, stress, t) => {
+const getHealthInsight = (bpm, hrv, stress, burnout, t) => {
   if (!bpm || !hrv) return null;
-  if (bpm > 100 && stress > 65) {
+
+  // CRITICAL WARNINGS (Overrides everything else)
+  if (bpm > 100 || stress > 65 || burnout > 70) {
     return { type: 'warning', icon: AlertCircle, color: 'text-orange-500', bg: 'bg-orange-500/10', border: 'border-orange-500/50', title: t('highStressTitle'), msg: t('highStressMsg'), healable: true };
   }
-  if (bpm < 55 && hrv > 60) {
-    return { type: 'success', icon: CheckCircle2, color: 'text-cyber-green', bg: 'bg-cyber-green/10', border: 'border-cyber-green/50', title: t('athleticTitle'), msg: t('athleticMsg'), healable: false };
-  }
-  if (hrv < 25) {
+  
+  // LOW RECOVERY / FATIGUE
+  if (hrv < 25 || burnout > 50 || (bpm < 55 && hrv < 50)) {
     return { type: 'warning', icon: AlertCircle, color: 'text-orange-500', bg: 'bg-orange-500/10', border: 'border-orange-500/50', title: t('lowRecoveryTitle'), msg: t('lowRecoveryMsg'), healable: true };
   }
-  if (bpm >= 60 && bpm <= 90 && stress <= 50) {
+
+  // ATHLETIC CONDITION (Strictly verified)
+  if (bpm < 60 && hrv > 60 && stress < 40 && burnout < 30) {
+    return { type: 'success', icon: CheckCircle2, color: 'text-cyber-green', bg: 'bg-cyber-green/10', border: 'border-cyber-green/50', title: t('athleticTitle'), msg: t('athleticMsg'), healable: false };
+  }
+
+  // OPTIMAL
+  if (bpm >= 60 && bpm <= 90 && stress <= 50 && burnout <= 40) {
     return { type: 'success', icon: CheckCircle2, color: 'text-cyber-cyan', bg: 'bg-cyber-cyan/10', border: 'border-cyber-cyan/50', title: t('optimalTitle'), msg: t('optimalMsg'), healable: false };
   }
+
+  // MODERATE FALLBACK
   return { type: 'info', icon: Info, color: 'text-cyber-purple', bg: 'bg-cyber-purple/10', border: 'border-cyber-purple/50', title: t('moderateTitle'), msg: t('moderateMsg'), healable: false };
 };
 
@@ -121,7 +131,7 @@ function App() {
     setFinalHrv(18);  // Low HRV
     setFinalStress(85); // High Stress
     setFinalBurnout(80); // High Burnout
-    setInsight(getHealthInsight(115, 18, 85, t));
+    setInsight(getHealthInsight(115, 18, 85, 80, t));
   };
 
   useEffect(() => {
@@ -234,7 +244,7 @@ function App() {
             setFinalStress(stressPercent);
             setFinalBurnout(burnoutPercent);
             
-            setInsight(getHealthInsight(clampedBpm, clampedHrv, stressPercent, t));
+            setInsight(getHealthInsight(clampedBpm, clampedHrv, stressPercent, burnoutPercent, t));
             saveScanResult(clampedBpm, clampedHrv, stressPercent);
 
             if (faceMeshControlsRef.current) {
