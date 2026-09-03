@@ -298,7 +298,7 @@ function App() {
 
         {/* Metrics & Graph */}
         <div className="flex-1 flex flex-col gap-4 md:gap-6">
-          <div className="flex flex-row justify-between flex-wrap gap-4">
+          <div className={`flex-row justify-between flex-wrap gap-4 ${status === 'COMPLETED' ? 'flex' : 'hidden md:flex'}`}>
             <VitalsCard 
               title={t('heartRate')} 
               value={status === 'COMPLETED' ? finalBpm : null} 
