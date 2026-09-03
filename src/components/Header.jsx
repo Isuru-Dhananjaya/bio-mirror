@@ -16,22 +16,22 @@ export default function Header({ fps, onOpenHistory }) {
   };
 
   return (
-    <header className="flex flex-col md:flex-row gap-4 md:gap-0 justify-between items-center p-4 border-b border-cyber-border bg-cyber-panel/80 backdrop-blur-md relative z-50 shadow-md">
+    <header className="flex justify-between items-center p-4 border-b border-cyber-border bg-cyber-panel/80 backdrop-blur-md relative z-50 shadow-md">
       <div className="flex items-center">
         <div className="flex items-center space-x-4">
           <div className="p-2 bg-cyber-cyan/10 rounded-xl border border-cyber-cyan/30 shadow-[0_0_10px_rgba(0,240,255,0.2)]">
             <Activity className="text-cyber-cyan animate-pulse" size={24} />
           </div>
           <div>
-            <h1 className="text-lg md:text-2xl font-black tracking-widest uppercase text-white drop-shadow-[0_0_8px_#00f0ff]">{t('title')}</h1>
-            <p className="text-[6px] md:text-[9px] text-cyber-cyan font-mono tracking-widest">{t('subtitle')}</p>
+            <h1 className="text-xl md:text-2xl font-black tracking-widest uppercase text-white drop-shadow-[0_0_8px_#00f0ff]">{t('title')}</h1>
+            <p className="text-[7px] md:text-[9px] text-cyber-cyan font-mono tracking-widest">{t('subtitle')}</p>
           </div>
         </div>
         
         <InstallPrompt />
       </div>
       
-      <div className="flex flex-wrap justify-center items-center gap-2 md:gap-4">
+      <div className="flex items-center space-x-3 md:space-x-4">
         {/* Language Switcher (Visible on Mobile & Desktop) */}
         <div className="flex bg-black border border-cyber-cyan/30 rounded-lg overflow-hidden">
           <button onClick={() => setLang('en')} className={`px-1.5 md:px-2 py-1 text-[8px] md:text-[9px] font-bold ${lang === 'en' ? 'bg-cyber-cyan text-black' : 'text-gray-400 hover:text-white'}`}>EN</button>
@@ -39,13 +39,13 @@ export default function Header({ fps, onOpenHistory }) {
           <button onClick={() => setLang('ta')} className={`px-1.5 md:px-2 py-1 text-[8px] md:text-[9px] font-bold ${lang === 'ta' ? 'bg-cyber-cyan text-black' : 'text-gray-400 hover:text-white'}`}>தமிழ்</button>
         </div>
 
-        <button onClick={onOpenHistory} className="flex items-center space-x-2 text-white bg-cyber-dark px-2 md:px-3 py-1.5 rounded-full border border-cyber-cyan/30 hover:border-cyber-cyan hover:shadow-[0_0_10px_#00f0ff] transition-all">
+        <button onClick={onOpenHistory} className="flex items-center space-x-2 text-white bg-cyber-dark px-3 py-1.5 rounded-full border border-cyber-cyan/30 hover:border-cyber-cyan hover:shadow-[0_0_10px_#00f0ff] transition-all">
           <LineChartIcon size={14} className="text-cyber-cyan" />
           <span className="font-mono text-[10px] font-bold tracking-widest hidden lg:inline">{t('history')}</span>
         </button>
         <button 
           onClick={handleMuteToggle} 
-          className={`flex items-center space-x-2 transition-all duration-300 border px-2 md:px-4 py-1.5 rounded-full ${
+          className={`flex items-center space-x-2 transition-all duration-300 border px-4 py-1.5 rounded-full ${
             muted 
               ? 'text-gray-400 border-gray-600 bg-gray-800 hover:text-white' 
               : 'text-cyber-purple border-cyber-purple/50 bg-cyber-purple/10 hover:bg-cyber-purple/30 hover:shadow-[0_0_10px_#b800ff]'
@@ -72,20 +72,20 @@ export default function Header({ fps, onOpenHistory }) {
 
         {/* Auth Section */}
         {!currentUser ? (
-          <button onClick={loginWithGoogle} className="flex items-center space-x-1 md:space-x-2 text-white bg-blue-600/20 px-2 md:px-3 py-1 md:py-1.5 rounded-full border border-blue-500/50 hover:bg-blue-600/40 hover:shadow-[0_0_10px_rgba(59,130,246,0.8)] transition-all">
+          <button onClick={loginWithGoogle} className="flex items-center space-x-2 text-white bg-blue-600/20 px-3 py-1.5 rounded-full border border-blue-500/50 hover:bg-blue-600/40 hover:shadow-[0_0_10px_rgba(59,130,246,0.8)] transition-all">
             <span className="font-mono text-[10px] font-bold tracking-widest hidden lg:inline">LOGIN</span>
-            <div className="w-3 h-3 md:w-4 md:h-4 bg-blue-500 rounded-full flex items-center justify-center text-[7px] md:text-[10px] font-bold">G</div>
+            <div className="w-4 h-4 bg-blue-500 rounded-full flex items-center justify-center text-[10px] font-bold">G</div>
           </button>
         ) : (
-          <div className="flex items-center space-x-1 md:space-x-3 bg-cyber-panel border border-cyber-border rounded-full pr-1 pl-1.5 md:pl-3 py-0.5 md:py-1">
-            <span className="font-mono text-[8px] md:text-[9px] text-cyber-cyan truncate max-w-[80px] hidden md:inline">{currentUser.displayName?.split(' ')[0]}</span>
-            <img src={currentUser.photoURL || 'https://via.placeholder.com/30'} alt="Avatar" className="w-4 h-4 md:w-5 md:h-5 rounded-full border border-cyber-cyan" />
-            <button onClick={logout} className="text-gray-400 hover:text-red-400 p-1 rounded-full transition-colors text-[7px] md:text-[9px] font-mono">EXIT</button>
+          <div className="flex items-center space-x-3 bg-cyber-panel border border-cyber-border rounded-full pr-1 pl-3 py-1">
+            <span className="font-mono text-[9px] text-cyber-cyan truncate max-w-[80px] hidden md:inline">{currentUser.displayName?.split(' ')[0]}</span>
+            <img src={currentUser.photoURL || 'https://via.placeholder.com/30'} alt="Avatar" className="w-5 h-5 rounded-full border border-cyber-cyan" />
+            <button onClick={logout} className="text-gray-400 hover:text-red-400 p-1 rounded-full transition-colors text-[9px] font-mono">EXIT</button>
           </div>
         )}
 
         {/* FPS Badge with Custom Cyber Tooltip */}
-        <div className="hidden md:flex relative group items-center space-x-2 text-cyber-cyan font-mono bg-cyber-panel px-3 py-1.5 rounded-md border border-cyber-border cursor-help">
+        <div className="flex relative group items-center space-x-2 text-cyber-cyan font-mono bg-cyber-panel px-3 py-1.5 rounded-md border border-cyber-border cursor-help">
           <Camera size={14} />
           <span className="text-[10px]">{fps} FPS</span>
 

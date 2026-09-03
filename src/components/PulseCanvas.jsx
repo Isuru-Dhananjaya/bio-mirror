@@ -100,7 +100,7 @@ export default function PulseCanvas({ data = [], isCompleted = false }) {
       />
       {isCompleted && (
         <div className="absolute inset-0 flex items-center justify-center bg-black/50 backdrop-blur-sm">
-          <span className="text-cyber-green text-[7px] md:text-base font-bold tracking-widest uppercase border border-cyber-green/50 px-2 md:px-4 py-1 md:py-2 rounded bg-cyber-green/10 text-center">
+          <span className="text-cyber-green text-[10px] md:text-base font-bold tracking-widest uppercase border border-cyber-green/50 px-2 md:px-4 py-1 md:py-2 rounded bg-cyber-green/10 text-center">
             RECORDING STOPPED
           </span>
         </div>
