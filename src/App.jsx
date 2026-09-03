@@ -290,20 +290,19 @@ function App() {
             </div>
           )}
           
-          {status !== 'COMPLETED' && status !== 'IDLE' && (
-            <>
-              <video 
-                ref={videoRef}
-                className="absolute inset-0 w-full h-full object-cover"
-                style={{ transform: 'scaleX(-1)' }} 
-              />
-              <canvas 
-                ref={overlayRef}
-                className="absolute inset-0 w-full h-full object-cover pointer-events-none z-20"
-                style={{ transform: 'scaleX(-1)' }} 
-              />
-            </>
-          )}
+          {/* Video and Canvas ALWAYS mounted to prevent videoRef.current from being null during startCamera */}
+          <div className={`absolute inset-0 w-full h-full ${status === 'COMPLETED' || status === 'IDLE' ? 'hidden' : 'block'}`}>
+            <video 
+              ref={videoRef}
+              className="absolute inset-0 w-full h-full object-cover"
+              style={{ transform: 'scaleX(-1)' }} 
+            />
+            <canvas 
+              ref={overlayRef}
+              className="absolute inset-0 w-full h-full object-cover pointer-events-none z-20"
+              style={{ transform: 'scaleX(-1)' }} 
+            />
+          </div>
         </div>
 
         {/* Metrics & Graph */}
