@@ -3,10 +3,12 @@ import { Activity, ShieldCheck, Camera, Volume2, VolumeX, LineChart as LineChart
 import { toggleMute } from '../utils/audioHelper';
 import InstallPrompt from './InstallPrompt';
 import { useLanguage } from '../context/LanguageContext';
+import { useAuth } from '../context/AuthContext';
 
 export default function Header({ fps, onOpenHistory }) {
   const [muted, setMuted] = useState(false);
   const { t, lang, setLang } = useLanguage();
+  const { currentUser, loginWithGoogle, logout } = useAuth();
 
   const handleMuteToggle = () => {
     const isNowMuted = toggleMute();
@@ -67,6 +69,20 @@ export default function Header({ fps, onOpenHistory }) {
             </div>
           </div>
         </div>
+
+        {/* Auth Section */}
+        {!currentUser ? (
+          <button onClick={loginWithGoogle} className="flex items-center space-x-2 text-white bg-blue-600/20 px-3 py-1.5 rounded-full border border-blue-500/50 hover:bg-blue-600/40 hover:shadow-[0_0_10px_rgba(59,130,246,0.8)] transition-all">
+            <span className="font-mono text-[10px] font-bold tracking-widest hidden lg:inline">LOGIN</span>
+            <div className="w-4 h-4 bg-blue-500 rounded-full flex items-center justify-center text-[10px] font-bold">G</div>
+          </button>
+        ) : (
+          <div className="flex items-center space-x-3 bg-cyber-panel border border-cyber-border rounded-full pr-1 pl-3 py-1">
+            <span className="font-mono text-[9px] text-cyber-cyan truncate max-w-[80px] hidden md:inline">{currentUser.displayName?.split(' ')[0]}</span>
+            <img src={currentUser.photoURL || 'https://via.placeholder.com/30'} alt="Avatar" className="w-5 h-5 rounded-full border border-cyber-cyan" />
+            <button onClick={logout} className="text-gray-400 hover:text-red-400 p-1 rounded-full transition-colors text-[9px] font-mono">EXIT</button>
+          </div>
+        )}
 
         {/* FPS Badge with Custom Cyber Tooltip */}
         <div className="flex relative group items-center space-x-2 text-cyber-cyan font-mono bg-cyber-panel px-3 py-1.5 rounded-md border border-cyber-border cursor-help">

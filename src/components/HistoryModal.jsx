@@ -1,15 +1,25 @@
-import React from 'react';
-import { X, TrendingUp, Activity, Trash2, Download } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { X, TrendingUp, Activity, Trash2, Download, Loader2 } from 'lucide-react';
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from 'recharts';
 import { getHistory, clearHistory } from '../utils/storageHelper';
 import { useLanguage } from '../context/LanguageContext';
 
 export default function HistoryModal({ isOpen, onClose }) {
   const { t } = useLanguage();
+  const [data, setData] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    if (isOpen) {
+      setLoading(true);
+      getHistory().then(historyData => {
+        setData(historyData);
+        setLoading(false);
+      });
+    }
+  }, [isOpen]);
 
   if (!isOpen) return null;
-
-  const data = getHistory();
 
   const handleExportCSV = () => {
     if (!data || data.length === 0) return;
@@ -40,9 +50,9 @@ export default function HistoryModal({ isOpen, onClose }) {
   };
 
   const handleClear = () => {
-    if(window.confirm("Are you sure you want to delete all history? This cannot be undone.")) {
+    if(window.confirm("Are you sure you want to delete all local history? This cannot be undone.")) {
       clearHistory();
-      onClose(); // Close and reopen or just close to refresh
+      setData([]);
     }
   };
 
@@ -79,7 +89,12 @@ export default function HistoryModal({ isOpen, onClose }) {
 
         {/* Content */}
         <div className="flex-1 p-6 overflow-y-auto">
-          {data.length === 0 ? (
+          {loading ? (
+            <div className="flex flex-col items-center justify-center h-64 text-cyber-cyan font-mono">
+              <Loader2 size={48} className="mb-4 animate-spin opacity-50" />
+              <p>Decrypting cloud records...</p>
+            </div>
+          ) : data.length === 0 ? (
             <div className="flex flex-col items-center justify-center h-64 text-gray-500 font-mono">
               <Activity size={48} className="mb-4 opacity-20" />
               <p>No vital scans recorded yet.</p>

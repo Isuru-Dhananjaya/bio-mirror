@@ -303,16 +303,16 @@ function App() {
               title={t('heartRate')} 
               value={status === 'COMPLETED' ? finalBpm : null} 
               unit="BPM" 
-              status={status === 'COMPLETED' ? t('recorded') : (status === 'IDLE' ? t('standby') : t('scanning'))} 
-              color="cyan" 
+              status={status === 'COMPLETED' ? (finalBpm > 100 ? t('high') : finalBpm < 60 ? t('low') : t('normal')) : (status === 'IDLE' ? t('standby') : t('scanning'))} 
+              color={status === 'COMPLETED' ? (finalBpm > 100 || finalBpm < 60 ? 'orange' : 'cyan') : 'cyan'} 
               range="60 - 100"
             />
             <VitalsCard 
               title={t('heartRateVar')} 
               value={status === 'COMPLETED' ? finalHrv : null} 
               unit="MS" 
-              status={status === 'COMPLETED' ? t('optimal') : (status === 'IDLE' ? t('standby') : '--')} 
-              color="blue" 
+              status={status === 'COMPLETED' ? (finalHrv < 20 ? t('low') : finalHrv > 100 ? t('unusual') : t('optimal')) : (status === 'IDLE' ? t('standby') : '--')} 
+              color={status === 'COMPLETED' ? (finalHrv < 20 || finalHrv > 100 ? 'orange' : 'blue') : 'blue'} 
               range="20 - 100"
             />
             <VitalsCard 
@@ -320,15 +320,15 @@ function App() {
               value={status === 'COMPLETED' ? finalStress : null} 
               unit="%" 
               status={status === 'COMPLETED' ? (finalStress > 60 ? t('high') : t('normal')) : (status === 'IDLE' ? t('standby') : t('analyzing'))} 
-              color="green" 
+              color={status === 'COMPLETED' ? (finalStress > 60 ? 'orange' : 'green') : 'green'} 
               range="0 - 60"
             />
             <VitalsCard 
               title={t('burnoutIndex')} 
               value={status === 'COMPLETED' ? finalBurnout : null} 
               unit="%" 
-              status={status === 'COMPLETED' ? (finalBurnout > 70 ? t('fatigueHigh') : t('fatigueNormal')) : (status === 'IDLE' ? t('standby') : '--')} 
-              color="purple" 
+              status={status === 'COMPLETED' ? (finalBurnout > 50 ? t('fatigueHigh') : t('fatigueNormal')) : (status === 'IDLE' ? t('standby') : '--')} 
+              color={status === 'COMPLETED' ? (finalBurnout > 50 ? 'orange' : 'purple') : 'purple'} 
               range="0 - 50"
             />
           </div>

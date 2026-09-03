@@ -10,7 +10,7 @@ export default defineConfig({
       devOptions: {
         enabled: true
       },
-      includeAssets: ['favicon.svg', 'icon.svg'],
+      includeAssets: ['favicon.svg', 'bio-icon.svg'],
       manifest: {
         name: 'Bio-Mirror Vitals',
         short_name: 'Bio-Mirror',
@@ -20,13 +20,13 @@ export default defineConfig({
         display: 'standalone',
         icons: [
           {
-            src: 'icon.svg',
+            src: 'bio-icon.svg',
             sizes: '192x192',
             type: 'image/svg+xml',
             purpose: 'any maskable'
           },
           {
-            src: 'icon.svg',
+            src: 'bio-icon.svg',
             sizes: '512x512',
             type: 'image/svg+xml',
             purpose: 'any maskable'

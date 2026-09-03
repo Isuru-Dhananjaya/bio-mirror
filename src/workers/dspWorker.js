@@ -104,21 +104,36 @@ function bandpassFilter(signal, lowCut, highCut) {
 }
 
 function extractVitals(signal, times) {
+  // 1. Normalize signal to 0-1 range for reliable thresholding
+  const max = Math.max(...signal);
+  const min = Math.min(...signal);
+  const range = max - min || 1;
+  const normalized = signal.map(s => (s - min) / range);
+
   let peaks = [];
-  // Find local maxima
-  for (let i = 1; i < signal.length - 1; i++) {
-    if (signal[i] > signal[i - 1] && signal[i] > signal[i + 1] && signal[i] > 0) {
-      peaks.push({ index: i, time: times[i], value: signal[i] });
+  // 2. Find local maxima with a dynamic threshold
+  const threshold = 0.55; // Only consider peaks in the top 45% of the signal amplitude
+  for (let i = 1; i < normalized.length - 1; i++) {
+    if (normalized[i] > normalized[i - 1] && normalized[i] > normalized[i + 1] && normalized[i] > threshold) {
+      peaks.push({ index: i, time: times[i], value: normalized[i] });
     }
   }
 
-  // Filter valid peaks
+  // 3. Filter valid peaks based on physiological limits (Max 200 BPM -> min dist 300ms)
   let validPeaks = [];
-  let minPeakDist = 300; // ms (Max 200 BPM)
+  let minPeakDist = 300; 
   
   for (let i = 0; i < peaks.length; i++) {
-    if (validPeaks.length === 0 || (peaks[i].time - validPeaks[validPeaks.length - 1].time) > minPeakDist) {
+    if (validPeaks.length === 0) {
       validPeaks.push(peaks[i]);
+    } else {
+      const dist = peaks[i].time - validPeaks[validPeaks.length - 1].time;
+      if (dist > minPeakDist) {
+        validPeaks.push(peaks[i]);
+      } else if (peaks[i].value > validPeaks[validPeaks.length - 1].value) {
+        // If it's too close but higher, replace the previous peak (fixes false double-peaks)
+        validPeaks[validPeaks.length - 1] = peaks[i];
+      }
     }
   }
 
@@ -129,17 +144,29 @@ function extractVitals(signal, times) {
     rrIntervals.push(validPeaks[i].time - validPeaks[i - 1].time);
   }
 
-  // BPM calculation
-  const avgRR = rrIntervals.reduce((a, b) => a + b, 0) / rrIntervals.length;
+  // 4. Ectopic Beat / Outlier Rejection using Median Absolute Deviation
+  const sortedRR = rrIntervals.slice().sort((a,b) => a - b);
+  const medianRR = sortedRR[Math.floor(sortedRR.length / 2)];
+  
+  // Reject intervals that deviate more than 30% from the median (motion artifacts)
+  const filteredRR = rrIntervals.filter(rr => Math.abs(rr - medianRR) < medianRR * 0.3);
+
+  if (filteredRR.length < 2) return { bpm: null, hrv: null };
+
+  // 5. Calculate final BPM
+  const avgRR = filteredRR.reduce((a, b) => a + b, 0) / filteredRR.length;
   const bpm = Math.round(60000 / avgRR);
 
-  // HRV (RMSSD) calculation
+  // 6. HRV (RMSSD) calculation using only valid, filtered RR intervals
   let sumSqDiff = 0;
-  for (let i = 1; i < rrIntervals.length; i++) {
-    const diff = rrIntervals[i] - rrIntervals[i - 1];
+  for (let i = 1; i < filteredRR.length; i++) {
+    const diff = filteredRR[i] - filteredRR[i - 1];
     sumSqDiff += diff * diff;
   }
-  const hrv = Math.round(Math.sqrt(sumSqDiff / (rrIntervals.length - 1)));
+  let hrv = Math.round(Math.sqrt(sumSqDiff / (filteredRR.length - 1)));
+  
+  // Clamp HRV to reasonable physiological bounds to prevent NaN or extreme spikes
+  hrv = Math.min(150, Math.max(10, hrv));
 
   return { bpm, hrv };
 }
