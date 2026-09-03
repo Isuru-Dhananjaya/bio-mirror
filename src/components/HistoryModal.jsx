@@ -1,5 +1,5 @@
 import React from 'react';
-import { X, TrendingUp, Activity, Trash2 } from 'lucide-react';
+import { X, TrendingUp, Activity, Trash2, Download } from 'lucide-react';
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from 'recharts';
 import { getHistory, clearHistory } from '../utils/storageHelper';
 import { useLanguage } from '../context/LanguageContext';
@@ -10,6 +10,34 @@ export default function HistoryModal({ isOpen, onClose }) {
   if (!isOpen) return null;
 
   const data = getHistory();
+
+  const handleExportCSV = () => {
+    if (!data || data.length === 0) return;
+    
+    const headers = ['Date', 'Time', 'Heart Rate (BPM)', 'Stress (%)', 'HRV (ms)'];
+    const rows = data.map(item => [
+      item.dateLabel || '',
+      item.timeLabel || '',
+      item.bpm ?? '',
+      item.stress ?? '',
+      item.hrv ?? ''
+    ]);
+
+    const csvContent = [
+      headers.join(','),
+      ...rows.map(row => row.map(cell => `"${cell}"`).join(','))
+    ].join('\n');
+
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.setAttribute('download', `bio_mirror_vitals_${new Date().toISOString().slice(0,10)}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+  };
 
   const handleClear = () => {
     if(window.confirm("Are you sure you want to delete all history? This cannot be undone.")) {
@@ -79,9 +107,17 @@ export default function HistoryModal({ isOpen, onClose }) {
               <div>
                 <div className="flex justify-between items-end mb-4">
                   <h3 className="text-gray-400 text-xs font-bold tracking-widest uppercase">Recent Scans</h3>
-                  <button onClick={handleClear} className="text-red-500 hover:text-red-400 text-[10px] font-mono flex items-center space-x-1 border border-red-500/30 px-2 py-1 rounded bg-red-500/10 transition-colors">
-                    <Trash2 size={12} /> <span>CLEAR DATA</span>
-                  </button>
+                  <div className="flex items-center space-x-2">
+                    <button 
+                      onClick={handleExportCSV} 
+                      className="text-cyber-cyan hover:text-white text-[10px] font-mono flex items-center space-x-1 border border-cyber-cyan/40 px-2.5 py-1 rounded bg-cyber-cyan/10 hover:bg-cyber-cyan/20 transition-all shadow-[0_0_10px_rgba(0,240,255,0.15)]"
+                    >
+                      <Download size={12} /> <span>{t('exportCsv')}</span>
+                    </button>
+                    <button onClick={handleClear} className="text-red-500 hover:text-red-400 text-[10px] font-mono flex items-center space-x-1 border border-red-500/30 px-2 py-1 rounded bg-red-500/10 transition-colors">
+                      <Trash2 size={12} /> <span>CLEAR DATA</span>
+                    </button>
+                  </div>
                 </div>
                 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">

@@ -36,42 +36,57 @@ export default function PulseCanvas({ data = [], isCompleted = false }) {
 
     if (data.length === 0) return;
 
-    // Draw ECG Signal
+    // Draw ECG Signal with Smooth Natural Curves
     ctx.lineJoin = 'round';
-    ctx.strokeStyle = isCompleted ? '#555555' : '#00ff00'; // Gray out if finished, classic bright green otherwise
-    ctx.shadowBlur = isCompleted ? 0 : 12;
-    ctx.shadowColor = '#00ff00';
-    ctx.lineWidth = 2.5;
+    ctx.lineCap = 'round';
+    ctx.strokeStyle = isCompleted ? '#555555' : '#00ff41';
+    ctx.shadowBlur = isCompleted ? 0 : 16;
+    ctx.shadowColor = '#00ff41';
+    ctx.lineWidth = 2.8;
     
-    ctx.beginPath();
     const step = canvas.width / (data.length - 1 || 1);
-    
     const min = Math.min(...data);
     const max = Math.max(...data);
     const range = (max - min) || 1;
-    const threshold = min + (range * 0.6); // Top 40% for QRS spike simulation
-    
-    data.forEach((value, index) => {
-      const x = index * step;
-      
-      // Simulate sharp hospital ECG QRS peaks visually for the rPPG feed
+    const threshold = min + (range * 0.6);
+
+    const points = data.map((value, index) => {
       let displayValue = value;
       if (value > threshold) {
-        displayValue = value + (value - threshold) * 1.5; // Sharpen peaks
+        displayValue = value + (value - threshold) * 1.5;
       }
-
-      // Re-normalize to max height (leave padding)
       const adjustedMax = max + (max - threshold) * 1.5;
       const adjustedRange = (adjustedMax - min) || 1;
       const normalized = (displayValue - min) / adjustedRange;
-      
       const y = canvas.height * 0.9 - (normalized * canvas.height * 0.8);
-      
-      if (index === 0) ctx.moveTo(x, y);
-      else ctx.lineTo(x, y);
+      return { x: index * step, y };
     });
-    
+
+    ctx.beginPath();
+    ctx.moveTo(points[0].x, points[0].y);
+
+    for (let i = 1; i < points.length - 1; i++) {
+      const xc = (points[i].x + points[i + 1].x) / 2;
+      const yc = (points[i].y + points[i + 1].y) / 2;
+      ctx.quadraticCurveTo(points[i].x, points[i].y, xc, yc);
+    }
+
+    if (points.length > 1) {
+      const last = points[points.length - 1];
+      ctx.lineTo(last.x, last.y);
+    }
     ctx.stroke();
+
+    // Draw Glowing Scanner Head at the live pulse front
+    if (!isCompleted && points.length > 0) {
+      const lastPoint = points[points.length - 1];
+      ctx.beginPath();
+      ctx.arc(lastPoint.x, lastPoint.y, 4, 0, Math.PI * 2);
+      ctx.fillStyle = '#ffffff';
+      ctx.shadowBlur = 20;
+      ctx.shadowColor = '#00ff41';
+      ctx.fill();
+    }
 
   }, [data, isCompleted]);
 

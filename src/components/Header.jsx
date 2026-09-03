@@ -30,11 +30,11 @@ export default function Header({ fps, onOpenHistory }) {
       </div>
       
       <div className="flex items-center space-x-3 md:space-x-4">
-        {/* Language Switcher */}
-        <div className="hidden md:flex bg-black border border-cyber-cyan/30 rounded-lg overflow-hidden">
-          <button onClick={() => setLang('en')} className={`px-2 py-1 text-[9px] font-bold ${lang === 'en' ? 'bg-cyber-cyan text-black' : 'text-gray-400 hover:text-white'}`}>EN</button>
-          <button onClick={() => setLang('si')} className={`px-2 py-1 text-[9px] font-bold ${lang === 'si' ? 'bg-cyber-cyan text-black' : 'text-gray-400 hover:text-white'}`}>සිං</button>
-          <button onClick={() => setLang('ta')} className={`px-2 py-1 text-[9px] font-bold ${lang === 'ta' ? 'bg-cyber-cyan text-black' : 'text-gray-400 hover:text-white'}`}>தமிழ்</button>
+        {/* Language Switcher (Visible on Mobile & Desktop) */}
+        <div className="flex bg-black border border-cyber-cyan/30 rounded-lg overflow-hidden">
+          <button onClick={() => setLang('en')} className={`px-1.5 md:px-2 py-1 text-[8px] md:text-[9px] font-bold ${lang === 'en' ? 'bg-cyber-cyan text-black' : 'text-gray-400 hover:text-white'}`}>EN</button>
+          <button onClick={() => setLang('si')} className={`px-1.5 md:px-2 py-1 text-[8px] md:text-[9px] font-bold ${lang === 'si' ? 'bg-cyber-cyan text-black' : 'text-gray-400 hover:text-white'}`}>සිං</button>
+          <button onClick={() => setLang('ta')} className={`px-1.5 md:px-2 py-1 text-[8px] md:text-[9px] font-bold ${lang === 'ta' ? 'bg-cyber-cyan text-black' : 'text-gray-400 hover:text-white'}`}>தமிழ்</button>
         </div>
 
         <button onClick={onOpenHistory} className="flex items-center space-x-2 text-white bg-cyber-dark px-3 py-1.5 rounded-full border border-cyber-cyan/30 hover:border-cyber-cyan hover:shadow-[0_0_10px_#00f0ff] transition-all">

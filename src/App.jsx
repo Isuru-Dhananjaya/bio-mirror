@@ -4,28 +4,30 @@ import VitalsCard from './components/VitalsCard';
 import PulseCanvas from './components/PulseCanvas';
 import CalibrationOverlay from './components/CalibrationOverlay';
 import HistoryModal from './components/HistoryModal';
+import BioHealer from './components/BioHealer';
+import WrappedCard from './components/WrappedCard';
 import { useCamera } from './hooks/useCamera';
 import { initializeFaceMesh, drawFaceMesh, drawHologram, processFaceData } from './vision/faceTracking';
 import { playThump, initAudio } from './utils/audioHelper';
 import { saveScanResult } from './utils/storageHelper';
-import { Info, AlertCircle, CheckCircle2, ShieldAlert } from 'lucide-react';
+import { Info, AlertCircle, CheckCircle2, ShieldAlert, Activity } from 'lucide-react';
 import { useLanguage } from './context/LanguageContext';
 
 const getHealthInsight = (bpm, hrv, stress, t) => {
   if (!bpm || !hrv) return null;
   if (bpm > 100 && stress > 65) {
-    return { type: 'warning', icon: AlertCircle, color: 'text-orange-500', bg: 'bg-orange-500/10', border: 'border-orange-500/50', title: t('highStressTitle'), msg: t('highStressMsg') };
+    return { type: 'warning', icon: AlertCircle, color: 'text-orange-500', bg: 'bg-orange-500/10', border: 'border-orange-500/50', title: t('highStressTitle'), msg: t('highStressMsg'), healable: true };
   }
   if (bpm < 55 && hrv > 60) {
-    return { type: 'success', icon: CheckCircle2, color: 'text-cyber-green', bg: 'bg-cyber-green/10', border: 'border-cyber-green/50', title: t('athleticTitle'), msg: t('athleticMsg') };
+    return { type: 'success', icon: CheckCircle2, color: 'text-cyber-green', bg: 'bg-cyber-green/10', border: 'border-cyber-green/50', title: t('athleticTitle'), msg: t('athleticMsg'), healable: false };
   }
   if (hrv < 25) {
-    return { type: 'warning', icon: AlertCircle, color: 'text-orange-500', bg: 'bg-orange-500/10', border: 'border-orange-500/50', title: t('lowRecoveryTitle'), msg: t('lowRecoveryMsg') };
+    return { type: 'warning', icon: AlertCircle, color: 'text-orange-500', bg: 'bg-orange-500/10', border: 'border-orange-500/50', title: t('lowRecoveryTitle'), msg: t('lowRecoveryMsg'), healable: true };
   }
   if (bpm >= 60 && bpm <= 90 && stress <= 50) {
-    return { type: 'success', icon: CheckCircle2, color: 'text-cyber-cyan', bg: 'bg-cyber-cyan/10', border: 'border-cyber-cyan/50', title: t('optimalTitle'), msg: t('optimalMsg') };
+    return { type: 'success', icon: CheckCircle2, color: 'text-cyber-cyan', bg: 'bg-cyber-cyan/10', border: 'border-cyber-cyan/50', title: t('optimalTitle'), msg: t('optimalMsg'), healable: false };
   }
-  return { type: 'info', icon: Info, color: 'text-cyber-purple', bg: 'bg-cyber-purple/10', border: 'border-cyber-purple/50', title: t('moderateTitle'), msg: t('moderateMsg') };
+  return { type: 'info', icon: Info, color: 'text-cyber-purple', bg: 'bg-cyber-purple/10', border: 'border-cyber-purple/50', title: t('moderateTitle'), msg: t('moderateMsg'), healable: false };
 };
 
 function App() {
@@ -42,7 +44,9 @@ function App() {
   const [finalBpm, setFinalBpm] = useState(null);
   const [finalHrv, setFinalHrv] = useState(null);
   const [finalStress, setFinalStress] = useState(null);
+  const [finalBurnout, setFinalBurnout] = useState(null);
   const [insight, setInsight] = useState(null);
+  const [showHealer, setShowHealer] = useState(false);
 
   const workerRef = useRef(null);
   const overlayRef = useRef(null); 
@@ -56,6 +60,8 @@ function App() {
   const statusRef = useRef(status);
   
   const tempVitals = useRef({ bpm: null, hrv: null });
+  const earSum = useRef(0);
+  const earCount = useRef(0);
 
   useEffect(() => {
     statusRef.current = status;
@@ -90,6 +96,9 @@ function App() {
     setStatus('REQUESTING_CAMERA');
     setInsight(null);
     setLiveAlert(null);
+    setFinalBurnout(null);
+    earSum.current = 0;
+    earCount.current = 0;
     startCamera();
   };
 
@@ -98,8 +107,21 @@ function App() {
     setProgress(0);
     setLiveAlert(null);
     scanningFrames.current = 0;
+    earSum.current = 0;
+    earCount.current = 0;
     if (faceMeshControlsRef.current) faceMeshControlsRef.current.stop();
     stopCamera();
+  };
+
+  // DEVELOPER SHORTCUT: Instantly mock a completed scan
+  const handleDevTest = () => {
+    stopCamera();
+    setStatus('COMPLETED');
+    setFinalBpm(115); // High BPM
+    setFinalHrv(18);  // Low HRV
+    setFinalStress(85); // High Stress
+    setFinalBurnout(80); // High Burnout
+    setInsight(getHealthInsight(115, 18, 85, t));
   };
 
   useEffect(() => {
@@ -162,6 +184,11 @@ function App() {
         
         let shouldPauseScan = false;
         if (faceMetrics) {
+          if (faceMetrics.ear) {
+            earSum.current += faceMetrics.ear;
+            earCount.current += 1;
+          }
+
           if (faceMetrics.isMoving) {
             setLiveAlert('MOTION');
             shouldPauseScan = true;
@@ -199,9 +226,13 @@ function App() {
             const clampedHrv = Math.max(15, Math.min(120, rawHrv));
             const stressPercent = Math.round(Math.min(99, Math.max(5, (clampedBpm * 0.4) + (100 - clampedHrv) * 0.5)));
             
+            const avgEar = earCount.current > 0 ? earSum.current / earCount.current : 0.28;
+            const burnoutPercent = Math.round(Math.max(0, Math.min(100, ((0.30 - avgEar) / 0.12) * 100)));
+
             setFinalBpm(clampedBpm);
             setFinalHrv(clampedHrv);
             setFinalStress(stressPercent);
+            setFinalBurnout(burnoutPercent);
             
             setInsight(getHealthInsight(clampedBpm, clampedHrv, stressPercent, t));
             saveScanResult(clampedBpm, clampedHrv, stressPercent);
@@ -230,10 +261,10 @@ function App() {
   }, [hasPermission, error, stopCamera, t]);
 
   return (
-    <div className="h-screen w-screen flex flex-col">
+    <div className="h-screen w-screen flex flex-col overflow-hidden">
       <Header fps={fps} onOpenHistory={() => setIsHistoryOpen(true)} />
       
-      <main className="flex-1 p-4 md:p-6 flex flex-col lg:flex-row gap-6 relative z-10 overflow-hidden">
+      <main className="flex-1 p-4 md:p-6 flex flex-col lg:flex-row gap-6 relative z-10 overflow-y-auto">
         
         {/* The Cyber Mirror */}
         <div className="flex-1 lg:max-w-md xl:max-w-lg relative flex items-center justify-center border border-cyber-border bg-black rounded-2xl overflow-hidden shadow-[0_8px_30px_rgba(0,0,0,0.5)]">
@@ -281,7 +312,7 @@ function App() {
               value={status === 'COMPLETED' ? finalHrv : null} 
               unit="MS" 
               status={status === 'COMPLETED' ? t('optimal') : (status === 'IDLE' ? t('standby') : '--')} 
-              color="purple" 
+              color="blue" 
               range="20 - 100"
             />
             <VitalsCard 
@@ -292,19 +323,48 @@ function App() {
               color="green" 
               range="0 - 60"
             />
+            <VitalsCard 
+              title={t('burnoutIndex')} 
+              value={status === 'COMPLETED' ? finalBurnout : null} 
+              unit="%" 
+              status={status === 'COMPLETED' ? (finalBurnout > 70 ? t('fatigueHigh') : t('fatigueNormal')) : (status === 'IDLE' ? t('standby') : '--')} 
+              color="purple" 
+              range="0 - 50"
+            />
           </div>
           
           {/* Dynamic Medical Insight Alert */}
           {status === 'COMPLETED' && insight && (
-            <div className={`w-full p-4 rounded-xl border flex items-start space-x-4 animate-fade-in ${insight.bg} ${insight.border} shadow-[0_0_15px_rgba(0,0,0,0.2)]`}>
-              <div className="shrink-0 mt-1">
-                <insight.icon size={24} className={insight.color} />
+            <div className={`w-full p-4 rounded-xl border flex flex-col sm:flex-row items-start sm:items-center justify-between space-y-4 sm:space-y-0 sm:space-x-4 animate-fade-in ${insight.bg} ${insight.border} shadow-[0_0_15px_rgba(0,0,0,0.2)]`}>
+              <div className="flex items-start space-x-4">
+                <div className="shrink-0 mt-1">
+                  <insight.icon size={24} className={insight.color} />
+                </div>
+                <div>
+                  <h4 className={`text-xs font-black tracking-widest uppercase mb-1 ${insight.color}`}>{insight.title}</h4>
+                  <p className="text-gray-300 text-[10px] md:text-xs font-mono leading-relaxed">{insight.msg}</p>
+                </div>
               </div>
-              <div>
-                <h4 className={`text-xs font-black tracking-widest uppercase mb-1 ${insight.color}`}>{insight.title}</h4>
-                <p className="text-gray-300 text-[10px] md:text-xs font-mono leading-relaxed">{insight.msg}</p>
-              </div>
+              
+              {insight.healable && (
+                <button 
+                  onClick={() => setShowHealer(true)}
+                  className="shrink-0 btn-cyber px-4 py-2 text-[10px] bg-orange-500/20 text-orange-500 border-orange-500 hover:bg-orange-500/40 hover:shadow-[0_0_15px_#ff8c00] flex items-center space-x-2"
+                >
+                  <Activity size={14} />
+                  <span>{t('healingMode')}</span>
+                </button>
+              )}
             </div>
+          )}
+
+          {status === 'COMPLETED' && (
+            <WrappedCard 
+              bpm={finalBpm} 
+              hrv={finalHrv} 
+              stress={finalStress} 
+              burnout={finalBurnout} 
+            />
           )}
 
           {/* Lower Section: 3D Hologram + ECG Graph */}
@@ -363,6 +423,17 @@ function App() {
 
       </main>
       <HistoryModal isOpen={isHistoryOpen} onClose={() => setIsHistoryOpen(false)} />
+      {showHealer && <BioHealer onClose={() => setShowHealer(false)} />}
+      
+      {/* DEVELOPER FAST-FORWARD BUTTON */}
+      {import.meta.env.DEV && (
+        <button 
+          onClick={handleDevTest}
+          className="fixed bottom-4 left-4 z-[9999] bg-orange-600 hover:bg-orange-500 text-white text-[10px] font-bold px-3 py-1 rounded shadow-lg opacity-50 hover:opacity-100 transition-opacity"
+        >
+          [DEV] MOCK SCAN
+        </button>
+      )}
     </div>
   );
 }

@@ -37,6 +37,25 @@ export const initializeFaceMesh = (videoElement, onResultsCallback) => {
 let roiCanvas = null;
 let lastNose = null;
 
+// Helper to get 2D distance
+const getDist = (p1, p2) => Math.sqrt(Math.pow(p1.x - p2.x, 2) + Math.pow(p1.y - p2.y, 2));
+
+// Calculate Eye Aspect Ratio (EAR) for a single eye
+const calculateEAR = (landmarks, indices) => {
+  const p1 = landmarks[indices[0]];
+  const p2 = landmarks[indices[1]];
+  const p3 = landmarks[indices[2]];
+  const p4 = landmarks[indices[3]];
+  const p5 = landmarks[indices[4]];
+  const p6 = landmarks[indices[5]];
+
+  const vertical1 = getDist(p2, p6);
+  const vertical2 = getDist(p3, p5);
+  const horizontal = getDist(p1, p4);
+
+  return (vertical1 + vertical2) / (2.0 * horizontal);
+};
+
 export const processFaceData = (videoElement, multiFaceLandmarks) => {
   if (!multiFaceLandmarks || !multiFaceLandmarks[0]) return null;
   const landmarks = multiFaceLandmarks[0];
@@ -45,12 +64,19 @@ export const processFaceData = (videoElement, multiFaceLandmarks) => {
   const nose = landmarks[1];
   let isMoving = false;
   if (lastNose) {
-    const dist = Math.sqrt(Math.pow(nose.x - lastNose.x, 2) + Math.pow(nose.y - lastNose.y, 2));
-    if (dist > 0.008) isMoving = true; // Movement threshold
+    const dist = getDist(nose, lastNose);
+    if (dist > 0.008) isMoving = true;
   }
   lastNose = { x: nose.x, y: nose.y };
 
-  // 2. Dynamic Masking (Tight Forehead Bounding Box)
+  // 2. Eye Aspect Ratio (EAR) for Burnout/Fatigue Detection
+  // Left eye indices: 33, 160, 158, 133, 153, 144
+  // Right eye indices: 362, 385, 387, 263, 373, 380
+  const leftEAR = calculateEAR(landmarks, [33, 160, 158, 133, 153, 144]);
+  const rightEAR = calculateEAR(landmarks, [362, 385, 387, 263, 373, 380]);
+  const avgEAR = (leftEAR + rightEAR) / 2.0;
+
+  // 3. Dynamic Masking (Tight Forehead Bounding Box)
   if (!roiCanvas) {
     roiCanvas = document.createElement('canvas');
     roiCanvas.width = 64;
@@ -86,10 +112,10 @@ export const processFaceData = (videoElement, multiFaceLandmarks) => {
   const avgG = g / count;
   const avgB = b / count;
 
-  // 3. Smart Light Detector (Luminance)
+  // 4. Smart Light Detector (Luminance)
   const brightness = (avgR + avgG + avgB) / 3;
 
-  return { r: avgR, g: avgG, b: avgB, brightness, isMoving };
+  return { r: avgR, g: avgG, b: avgB, brightness, isMoving, ear: avgEAR };
 };
 
 // NEW: Visual Face Tracking HUD
