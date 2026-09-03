@@ -16,22 +16,22 @@ export default function Header({ fps, onOpenHistory }) {
   };
 
   return (
-    <header className="flex justify-between items-center p-4 border-b border-cyber-border bg-cyber-panel/80 backdrop-blur-md relative z-50 shadow-md">
-      <div className="flex items-center">
-        <div className="flex items-center space-x-4">
-          <div className="p-2 bg-cyber-cyan/10 rounded-xl border border-cyber-cyan/30 shadow-[0_0_10px_rgba(0,240,255,0.2)]">
-            <Activity className="text-cyber-cyan animate-pulse" size={24} />
+    <header className="flex flex-col md:flex-row gap-3 md:gap-0 justify-between items-center p-3 md:p-4 border-b border-cyber-border bg-cyber-panel/80 backdrop-blur-md relative z-50 shadow-md">
+      <div className="flex w-full md:w-auto justify-between items-center">
+        <div className="flex items-center space-x-2 md:space-x-4">
+          <div className="p-1.5 md:p-2 bg-cyber-cyan/10 rounded-xl border border-cyber-cyan/30 shadow-[0_0_10px_rgba(0,240,255,0.2)]">
+            <Activity className="text-cyber-cyan animate-pulse" size={20} />
           </div>
           <div>
-            <h1 className="text-xl md:text-2xl font-black tracking-widest uppercase text-white drop-shadow-[0_0_8px_#00f0ff]">{t('title')}</h1>
-            <p className="text-[7px] md:text-[9px] text-cyber-cyan font-mono tracking-widest">{t('subtitle')}</p>
+            <h1 className="text-base md:text-2xl font-black tracking-widest uppercase text-white drop-shadow-[0_0_8px_#00f0ff]">{t('title')}</h1>
+            <p className="text-[6px] md:text-[9px] text-cyber-cyan font-mono tracking-widest">{t('subtitle')}</p>
           </div>
         </div>
         
         <InstallPrompt />
       </div>
       
-      <div className="flex items-center space-x-3 md:space-x-4">
+      <div className="flex w-full md:w-auto justify-center md:justify-end items-center gap-2 md:space-x-4 overflow-x-auto pb-1 md:pb-0 scrollbar-hide">
         {/* Language Switcher (Visible on Mobile & Desktop) */}
         <div className="flex bg-black border border-cyber-cyan/30 rounded-lg overflow-hidden">
           <button onClick={() => setLang('en')} className={`px-1.5 md:px-2 py-1 text-[8px] md:text-[9px] font-bold ${lang === 'en' ? 'bg-cyber-cyan text-black' : 'text-gray-400 hover:text-white'}`}>EN</button>

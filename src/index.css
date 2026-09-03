@@ -23,6 +23,15 @@
   @apply px-6 py-3 bg-cyber-cyan/10 text-cyber-cyan border border-cyber-cyan/50 rounded-lg uppercase tracking-widest font-bold hover:bg-cyber-cyan/30 hover:shadow-[0_0_15px_rgba(0,240,255,0.4)] transition-all duration-300 cursor-pointer;
 }
 
+@utility scrollbar-hide {
+  /* Firefox */
+  scrollbar-width: none;
+  /* Safari and Chrome */
+  &::-webkit-scrollbar {
+    display: none;
+  }
+}
+
 @layer base {
   body {
     background-color: var(--color-cyber-dark);
