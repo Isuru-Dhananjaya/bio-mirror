@@ -5,6 +5,7 @@ import PulseCanvas from './components/PulseCanvas';
 import CalibrationOverlay from './components/CalibrationOverlay';
 import HistoryModal from './components/HistoryModal';
 import BioHealer from './components/BioHealer';
+import AboutModal from './components/AboutModal';
 import WrappedCard from './components/WrappedCard';
 import { useCamera } from './hooks/useCamera';
 import { initializeFaceMesh, drawFaceMesh, drawHologram, processFaceData } from './vision/faceTracking';
@@ -46,6 +47,7 @@ function App() {
   const [status, setStatus] = useState('IDLE');
   const [progress, setProgress] = useState(0);
   const [isHistoryOpen, setIsHistoryOpen] = useState(false);
+  const [isAboutOpen, setIsAboutOpen] = useState(false);
   
   const [signalData, setSignalData] = useState([]);
   const [fps, setFps] = useState(0);
@@ -57,6 +59,12 @@ function App() {
   const [finalBurnout, setFinalBurnout] = useState(null);
   const [insight, setInsight] = useState(null);
   const [showHealer, setShowHealer] = useState(false);
+
+  useEffect(() => {
+    const openAbout = () => setIsAboutOpen(true);
+    window.addEventListener('open-about', openAbout);
+    return () => window.removeEventListener('open-about', openAbout);
+  }, []);
 
   const workerRef = useRef(null);
   const overlayRef = useRef(null); 
@@ -436,6 +444,7 @@ function App() {
 
       </main>
       <HistoryModal isOpen={isHistoryOpen} onClose={() => setIsHistoryOpen(false)} />
+      <AboutModal isOpen={isAboutOpen} onClose={() => setIsAboutOpen(false)} />
       {showHealer && <BioHealer onClose={() => setShowHealer(false)} />}
       
       {/* DEVELOPER FAST-FORWARD BUTTON */}

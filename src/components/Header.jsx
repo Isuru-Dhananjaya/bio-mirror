@@ -32,12 +32,24 @@ export default function Header({ fps, onOpenHistory }) {
       </div>
       
       <div className="flex w-full md:w-auto justify-center md:justify-end items-center gap-2 md:space-x-4 overflow-x-auto pb-1 md:pb-0 scrollbar-hide">
-        {/* Language Switcher (Visible on Mobile & Desktop) */}
-        <div className="flex bg-black border border-cyber-cyan/30 rounded-lg overflow-hidden">
-          <button onClick={() => setLang('en')} className={`px-1.5 md:px-2 py-1 text-[8px] md:text-[9px] font-bold ${lang === 'en' ? 'bg-cyber-cyan text-black' : 'text-gray-400 hover:text-white'}`}>EN</button>
-          <button onClick={() => setLang('si')} className={`px-1.5 md:px-2 py-1 text-[8px] md:text-[9px] font-bold ${lang === 'si' ? 'bg-cyber-cyan text-black' : 'text-gray-400 hover:text-white'}`}>සිං</button>
-          <button onClick={() => setLang('ta')} className={`px-1.5 md:px-2 py-1 text-[8px] md:text-[9px] font-bold ${lang === 'ta' ? 'bg-cyber-cyan text-black' : 'text-gray-400 hover:text-white'}`}>தமிழ்</button>
+        {/* Language Selection Box */}
+        <div className="relative group z-50">
+          <div className="flex items-center space-x-1 bg-black border border-cyber-cyan/30 px-2 py-1.5 rounded-lg cursor-pointer hover:border-cyber-cyan transition-colors">
+            <Globe size={14} className="text-cyber-cyan" />
+            <span className="text-[10px] font-bold text-white uppercase">{lang === 'si' ? 'සිං' : lang === 'ta' ? 'தமிழ்' : 'EN'}</span>
+          </div>
+          
+          <div className="absolute top-full mt-1 left-0 bg-cyber-dark border border-cyber-cyan/30 rounded-lg shadow-[0_0_15px_rgba(0,240,255,0.2)] overflow-hidden flex flex-col w-20 opacity-0 group-hover:opacity-100 pointer-events-none group-hover:pointer-events-auto transition-opacity">
+            <button onClick={() => setLang('en')} className={`px-3 py-2 text-[10px] font-bold text-left hover:bg-cyber-cyan/20 ${lang === 'en' ? 'text-cyber-cyan' : 'text-gray-300'}`}>EN</button>
+            <button onClick={() => setLang('si')} className={`px-3 py-2 text-[10px] font-bold text-left hover:bg-cyber-cyan/20 ${lang === 'si' ? 'text-cyber-cyan' : 'text-gray-300'}`}>සිංහල</button>
+            <button onClick={() => setLang('ta')} className={`px-3 py-2 text-[10px] font-bold text-left hover:bg-cyber-cyan/20 ${lang === 'ta' ? 'text-cyber-cyan' : 'text-gray-300'}`}>தமிழ்</button>
+          </div>
         </div>
+
+        {/* About App Button */}
+        <button onClick={() => window.dispatchEvent(new CustomEvent('open-about'))} className="flex items-center space-x-1 text-white bg-cyber-dark px-2 py-1.5 rounded-full border border-cyber-purple/30 hover:border-cyber-purple hover:shadow-[0_0_10px_#b800ff] transition-all">
+          <Info size={14} className="text-cyber-purple" />
+        </button>
 
         <button onClick={onOpenHistory} className="flex items-center space-x-2 text-white bg-cyber-dark px-3 py-1.5 rounded-full border border-cyber-cyan/30 hover:border-cyber-cyan hover:shadow-[0_0_10px_#00f0ff] transition-all">
           <LineChartIcon size={14} className="text-cyber-cyan" />

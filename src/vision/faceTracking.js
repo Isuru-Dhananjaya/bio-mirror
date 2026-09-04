@@ -1,6 +1,5 @@
 export const initializeFaceMesh = (videoElement, onResultsCallback) => {
   const FaceMesh = window.FaceMesh;
-  const Camera = window.Camera;
 
   const faceMesh = new FaceMesh({
     locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/${file}`
@@ -8,27 +7,38 @@ export const initializeFaceMesh = (videoElement, onResultsCallback) => {
 
   faceMesh.setOptions({
     maxNumFaces: 1,
-    refineLandmarks: true,
+    refineLandmarks: false, // Turned off to drastically boost FPS
     minDetectionConfidence: 0.5,
     minTrackingConfidence: 0.5
   });
 
   faceMesh.onResults(onResultsCallback);
 
-  const camera = new Camera(videoElement, {
-    onFrame: async () => {
-      if (videoElement && videoElement.videoWidth > 0) {
-        await faceMesh.send({ image: videoElement });
-      }
-    },
-    width: 640,
-    height: 480
-  });
+  let isRunning = true;
+  let lastVideoTime = -1;
 
-  camera.start();
+  const tick = async () => {
+    if (!isRunning) return;
+    
+    // Only process if the video has a new frame to save CPU
+    if (videoElement && videoElement.readyState >= 2 && videoElement.videoWidth > 0) {
+      if (videoElement.currentTime !== lastVideoTime) {
+        lastVideoTime = videoElement.currentTime;
+        try {
+          await faceMesh.send({ image: videoElement });
+        } catch (err) {
+          console.error("FaceMesh Error:", err);
+        }
+      }
+    }
+    requestAnimationFrame(tick);
+  };
+
+  tick();
+
   return {
     stop: () => {
-      camera.stop();
+      isRunning = false;
       faceMesh.close();
     }
   };
