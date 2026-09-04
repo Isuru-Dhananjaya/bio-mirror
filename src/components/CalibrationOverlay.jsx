@@ -46,7 +46,7 @@ export default function CalibrationOverlay({ status, progress, errorMsg, onStart
   }
 
   // 1. Unobtrusive Top HUD for Scanning and Initializing
-  if (status === 'SCANNING' || status === 'INITIALIZING') {
+  if (status === 'SCANNING' || status === 'INITIALIZING' || status === 'CALIBRATING') {
     return (
       <div className="absolute top-6 left-1/2 -translate-x-1/2 z-40 w-11/12 max-w-sm pointer-events-none">
         <div className="bg-cyber-panel/80 border border-cyber-cyan/40 p-4 rounded-xl shadow-[0_4px_20px_rgba(0,240,255,0.2)] backdrop-blur-md flex flex-col items-center transition-all duration-500 pointer-events-auto">
@@ -54,6 +54,22 @@ export default function CalibrationOverlay({ status, progress, errorMsg, onStart
             <div className="flex items-center space-x-3 mb-3">
                <Loader size={16} className="text-cyber-cyan animate-spin" />
                <span className="text-cyber-cyan font-bold tracking-widest text-[10px] drop-shadow-[0_0_5px_#00f0ff]">{t('loadingEngine')}</span>
+            </div>
+          ) : status === 'CALIBRATING' ? (
+            <div className="w-full mb-3">
+              <div className="flex justify-between items-center w-full mb-2">
+                 <div className="flex items-center space-x-2">
+                    <Loader size={14} className="text-cyber-purple animate-spin" />
+                    <span className="text-cyber-purple font-bold tracking-widest text-[9px] uppercase drop-shadow-[0_0_5px_#b800ff]">Calibrating Baseline...</span>
+                 </div>
+                 <span className="text-cyber-purple font-mono font-bold text-[10px]">{Math.round(progress)}%</span>
+              </div>
+              <div className="w-full h-1 bg-black/60 rounded-full overflow-hidden border border-cyber-purple/30">
+                <div 
+                  className="h-full bg-cyber-purple shadow-[0_0_8px_#b800ff] transition-all duration-300 ease-out"
+                  style={{ width: `${progress}%` }}
+                ></div>
+              </div>
             </div>
           ) : (
             <div className="w-full mb-3">

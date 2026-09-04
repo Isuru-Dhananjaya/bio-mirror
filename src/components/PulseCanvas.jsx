@@ -34,6 +34,26 @@ export default function PulseCanvas({ data = [], isCompleted = false }) {
     ctx.strokeStyle = '#004400';
     ctx.stroke();
 
+    // Draw Axis Labels
+    ctx.fillStyle = '#00ff41'; // neon green text
+    ctx.font = '10px monospace';
+    ctx.shadowBlur = 0;
+    
+    // Y-Axis label (Rotated)
+    ctx.save();
+    ctx.translate(12, canvas.height / 2);
+    ctx.rotate(-Math.PI / 2);
+    ctx.textAlign = 'center';
+    ctx.globalAlpha = 0.6;
+    ctx.fillText('Signal (Δ)', 0, 0);
+    ctx.restore();
+
+    // X-Axis label
+    ctx.textAlign = 'right';
+    ctx.globalAlpha = 0.6;
+    ctx.fillText('Time (ms)', canvas.width - 10, canvas.height - 10);
+    ctx.globalAlpha = 1.0;
+
     if (data.length === 0) return;
 
     // Draw ECG Signal with Smooth Natural Curves

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Activity, ShieldCheck, Camera, Volume2, VolumeX, LineChart as LineChartIcon, Globe } from 'lucide-react';
+import { Activity, ShieldCheck, Camera, Volume2, VolumeX, LineChart as LineChartIcon, Globe, Info } from 'lucide-react';
 import { toggleMute } from '../utils/audioHelper';
 import InstallPrompt from './InstallPrompt';
 import { useLanguage } from '../context/LanguageContext';
@@ -7,6 +7,7 @@ import { useAuth } from '../context/AuthContext';
 
 export default function Header({ fps, onOpenHistory }) {
   const [muted, setMuted] = useState(false);
+  const [langMenuOpen, setLangMenuOpen] = useState(false);
   const { t, lang, setLang } = useLanguage();
   const { currentUser, loginWithGoogle, logout } = useAuth();
 
@@ -31,24 +32,35 @@ export default function Header({ fps, onOpenHistory }) {
         <InstallPrompt />
       </div>
       
-      <div className="flex w-full md:w-auto justify-center md:justify-end items-center gap-2 md:space-x-4 overflow-x-auto pb-1 md:pb-0 scrollbar-hide">
+      <div className="flex flex-wrap w-full md:w-auto justify-center md:justify-end items-center gap-2 md:space-x-4 pb-1 md:pb-0">
         {/* Language Selection Box */}
-        <div className="relative group z-50">
-          <div className="flex items-center space-x-1 bg-black border border-cyber-cyan/30 px-2 py-1.5 rounded-lg cursor-pointer hover:border-cyber-cyan transition-colors">
+        <div className="relative z-50">
+          <div 
+            onClick={() => setLangMenuOpen(!langMenuOpen)}
+            className="flex items-center space-x-1 bg-black border border-cyber-cyan/30 px-2 py-1.5 rounded-lg cursor-pointer hover:border-cyber-cyan transition-colors"
+          >
             <Globe size={14} className="text-cyber-cyan" />
             <span className="text-[10px] font-bold text-white uppercase">{lang === 'si' ? 'සිං' : lang === 'ta' ? 'தமிழ்' : 'EN'}</span>
           </div>
           
-          <div className="absolute top-full mt-1 left-0 bg-cyber-dark border border-cyber-cyan/30 rounded-lg shadow-[0_0_15px_rgba(0,240,255,0.2)] overflow-hidden flex flex-col w-20 opacity-0 group-hover:opacity-100 pointer-events-none group-hover:pointer-events-auto transition-opacity">
-            <button onClick={() => setLang('en')} className={`px-3 py-2 text-[10px] font-bold text-left hover:bg-cyber-cyan/20 ${lang === 'en' ? 'text-cyber-cyan' : 'text-gray-300'}`}>EN</button>
-            <button onClick={() => setLang('si')} className={`px-3 py-2 text-[10px] font-bold text-left hover:bg-cyber-cyan/20 ${lang === 'si' ? 'text-cyber-cyan' : 'text-gray-300'}`}>සිංහල</button>
-            <button onClick={() => setLang('ta')} className={`px-3 py-2 text-[10px] font-bold text-left hover:bg-cyber-cyan/20 ${lang === 'ta' ? 'text-cyber-cyan' : 'text-gray-300'}`}>தமிழ்</button>
-          </div>
+          {langMenuOpen && (
+            <div className="absolute top-full mt-1 left-0 bg-cyber-dark border border-cyber-cyan/30 rounded-lg shadow-[0_0_15px_rgba(0,240,255,0.2)] overflow-hidden flex flex-col w-20 animate-fade-in">
+              <button onClick={() => { setLang('en'); setLangMenuOpen(false); }} className={`px-3 py-2 text-[10px] font-bold text-left hover:bg-cyber-cyan/20 ${lang === 'en' ? 'text-cyber-cyan' : 'text-gray-300'}`}>EN</button>
+              <button onClick={() => { setLang('si'); setLangMenuOpen(false); }} className={`px-3 py-2 text-[10px] font-bold text-left hover:bg-cyber-cyan/20 ${lang === 'si' ? 'text-cyber-cyan' : 'text-gray-300'}`}>සිංහල</button>
+              <button onClick={() => { setLang('ta'); setLangMenuOpen(false); }} className={`px-3 py-2 text-[10px] font-bold text-left hover:bg-cyber-cyan/20 ${lang === 'ta' ? 'text-cyber-cyan' : 'text-gray-300'}`}>தமிழ்</button>
+            </div>
+          )}
         </div>
+
+        {/* Profile Button */}
+        <button onClick={() => window.dispatchEvent(new CustomEvent('open-profile'))} className="flex items-center space-x-1 text-white bg-cyber-dark px-2 py-1.5 rounded-full border border-cyber-cyan/30 hover:border-cyber-cyan hover:shadow-[0_0_10px_#00f0ff] transition-all">
+          <Activity size={14} className="text-cyber-cyan" />
+        </button>
 
         {/* About App Button */}
         <button onClick={() => window.dispatchEvent(new CustomEvent('open-about'))} className="flex items-center space-x-1 text-white bg-cyber-dark px-2 py-1.5 rounded-full border border-cyber-purple/30 hover:border-cyber-purple hover:shadow-[0_0_10px_#b800ff] transition-all">
           <Info size={14} className="text-cyber-purple" />
+          <span className="font-mono text-[9px] font-bold tracking-widest text-cyber-purple">INFO</span>
         </button>
 
         <button onClick={onOpenHistory} className="flex items-center space-x-2 text-white bg-cyber-dark px-3 py-1.5 rounded-full border border-cyber-cyan/30 hover:border-cyber-cyan hover:shadow-[0_0_10px_#00f0ff] transition-all">

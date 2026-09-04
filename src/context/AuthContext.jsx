@@ -8,15 +8,32 @@ export const useAuth = () => useContext(AuthContext);
 
 export const AuthProvider = ({ children }) => {
   const [currentUser, setCurrentUser] = useState(null);
+  const [userProfile, setUserProfile] = useState(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    // Load local profile data
+    const savedProfile = localStorage.getItem('bioMirrorProfile');
+    if (savedProfile) {
+      try {
+        setUserProfile(JSON.parse(savedProfile));
+      } catch (e) {
+        console.error("Failed to parse profile", e);
+      }
+    }
+
     const unsubscribe = onAuthStateChanged(auth, (user) => {
       setCurrentUser(user);
       setLoading(false);
     });
     return unsubscribe;
   }, []);
+
+  const saveProfile = (age, gender) => {
+    const profile = { age, gender };
+    setUserProfile(profile);
+    localStorage.setItem('bioMirrorProfile', JSON.stringify(profile));
+  };
 
   const loginWithGoogle = async () => {
     const provider = new GoogleAuthProvider();
@@ -31,7 +48,7 @@ export const AuthProvider = ({ children }) => {
     return signOut(auth);
   };
 
-  const value = { currentUser, loginWithGoogle, logout };
+  const value = { currentUser, userProfile, saveProfile, loginWithGoogle, logout };
 
   return (
     <AuthContext.Provider value={value}>

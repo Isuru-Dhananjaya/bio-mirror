@@ -5,7 +5,11 @@ import PulseCanvas from './components/PulseCanvas';
 import CalibrationOverlay from './components/CalibrationOverlay';
 import HistoryModal from './components/HistoryModal';
 import BioHealer from './components/BioHealer';
+import LiveScanner from './components/LiveScanner';
+import ResultSummary from './components/ResultSummary';
+import HologramEcg from './components/HologramEcg';
 import AboutModal from './components/AboutModal';
+import UserProfileModal from './components/UserProfileModal';
 import WrappedCard from './components/WrappedCard';
 import { useCamera } from './hooks/useCamera';
 import { initializeFaceMesh, drawFaceMesh, drawHologram, processFaceData } from './vision/faceTracking';
@@ -13,41 +17,18 @@ import { playThump, initAudio } from './utils/audioHelper';
 import { saveScanResult } from './utils/storageHelper';
 import { Info, AlertCircle, CheckCircle2, ShieldAlert, Activity } from 'lucide-react';
 import { useLanguage } from './context/LanguageContext';
-
-const getHealthInsight = (bpm, hrv, stress, burnout, t) => {
-  if (!bpm || !hrv) return null;
-
-  // CRITICAL WARNINGS (Overrides everything else)
-  if (bpm > 100 || stress > 65 || burnout > 70) {
-    return { type: 'warning', icon: AlertCircle, color: 'text-orange-500', bg: 'bg-orange-500/10', border: 'border-orange-500/50', title: t('highStressTitle'), msg: t('highStressMsg'), healable: true };
-  }
-  
-  // LOW RECOVERY / FATIGUE
-  if (hrv < 25 || burnout > 50 || (bpm < 55 && hrv < 50)) {
-    return { type: 'warning', icon: AlertCircle, color: 'text-orange-500', bg: 'bg-orange-500/10', border: 'border-orange-500/50', title: t('lowRecoveryTitle'), msg: t('lowRecoveryMsg'), healable: true };
-  }
-
-  // ATHLETIC CONDITION (Strictly verified)
-  if (bpm < 60 && hrv > 60 && stress < 40 && burnout < 30) {
-    return { type: 'success', icon: CheckCircle2, color: 'text-cyber-green', bg: 'bg-cyber-green/10', border: 'border-cyber-green/50', title: t('athleticTitle'), msg: t('athleticMsg'), healable: false };
-  }
-
-  // OPTIMAL
-  if (bpm >= 60 && bpm <= 90 && stress <= 50 && burnout <= 40) {
-    return { type: 'success', icon: CheckCircle2, color: 'text-cyber-cyan', bg: 'bg-cyber-cyan/10', border: 'border-cyber-cyan/50', title: t('optimalTitle'), msg: t('optimalMsg'), healable: false };
-  }
-
-  // MODERATE FALLBACK
-  return { type: 'info', icon: Info, color: 'text-cyber-purple', bg: 'bg-cyber-purple/10', border: 'border-cyber-purple/50', title: t('moderateTitle'), msg: t('moderateMsg'), healable: false };
-};
+import { useAuth } from './context/AuthContext';
+import { getHealthInsight } from './utils/healthLogic';
 
 function App() {
   const { t } = useLanguage();
+  const { userProfile } = useAuth();
   const { videoRef, hasPermission, error, startCamera, stopCamera } = useCamera();
-  const [status, setStatus] = useState('IDLE');
+  const [status, setStatus] = useState('IDLE'); // IDLE | REQUESTING_PROFILE | REQUESTING_CAMERA | INITIALIZING | CALIBRATING | SCANNING | COMPLETED | ERROR
   const [progress, setProgress] = useState(0);
   const [isHistoryOpen, setIsHistoryOpen] = useState(false);
   const [isAboutOpen, setIsAboutOpen] = useState(false);
+  const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
   
   const [signalData, setSignalData] = useState([]);
   const [fps, setFps] = useState(0);
@@ -62,8 +43,13 @@ function App() {
 
   useEffect(() => {
     const openAbout = () => setIsAboutOpen(true);
+    const openProfile = () => setIsProfileModalOpen(true);
     window.addEventListener('open-about', openAbout);
-    return () => window.removeEventListener('open-about', openAbout);
+    window.addEventListener('open-profile', openProfile);
+    return () => {
+      window.removeEventListener('open-about', openAbout);
+      window.removeEventListener('open-profile', openProfile);
+    };
   }, []);
 
   const workerRef = useRef(null);
@@ -74,6 +60,7 @@ function App() {
   const frameCount = useRef(0);
   const lastTime = useRef(performance.now());
   const scanningFrames = useRef(0);
+  const calibratingFrames = useRef(0);
   const lastThumpTime = useRef(0);
   const statusRef = useRef(status);
   
@@ -109,12 +96,20 @@ function App() {
     return () => workerRef.current?.terminate();
   }, []);
 
-  const handleStartSystem = () => {
+  const handleStartSystem = (forceStart = false) => {
+    // Prevent event object from being truthy
+    const isForced = forceStart === true;
+    if (!userProfile && !isForced) {
+      setIsProfileModalOpen(true);
+      return;
+    }
     initAudio();
     setStatus('REQUESTING_CAMERA');
     setInsight(null);
     setLiveAlert(null);
     setFinalBurnout(null);
+    scanningFrames.current = 0;
+    calibratingFrames.current = 0;
     earSum.current = 0;
     earCount.current = 0;
     startCamera();
@@ -194,15 +189,18 @@ function App() {
       if (currentStatus === 'COMPLETED') return;
 
       if (results.multiFaceLandmarks && results.multiFaceLandmarks.length > 0) {
+        let activeStatus = currentStatus;
         if (currentStatus === 'INITIALIZING' || currentStatus === 'ERROR' || currentStatus === 'REQUESTING_CAMERA') {
-          setStatus('SCANNING');
+          setStatus('CALIBRATING');
+          activeStatus = 'CALIBRATING';
         }
 
         const faceMetrics = processFaceData(videoRef.current, results.multiFaceLandmarks);
         
         let shouldPauseScan = false;
         if (faceMetrics) {
-          if (faceMetrics.ear) {
+          // Ignore blinks (< 0.15) so we get the true resting eyelid state
+          if (faceMetrics.ear && faceMetrics.ear > 0.15) {
             earSum.current += faceMetrics.ear;
             earCount.current += 1;
           }
@@ -223,8 +221,18 @@ function App() {
             }
           }
         }
-        
-        if (currentStatus === 'SCANNING') {
+
+        if (activeStatus === 'CALIBRATING') {
+          if (!shouldPauseScan) {
+            calibratingFrames.current++;
+          }
+          setProgress(Math.min((calibratingFrames.current / 150) * 100, 100)); // 5 seconds calibration
+          
+          if (calibratingFrames.current >= 150) {
+            setStatus('SCANNING');
+            setProgress(0);
+          }
+        } else if (activeStatus === 'SCANNING') {
           if (!shouldPauseScan) {
             scanningFrames.current++;
           } else {
@@ -245,14 +253,34 @@ function App() {
             const stressPercent = Math.round(Math.min(99, Math.max(5, (clampedBpm * 0.4) + (100 - clampedHrv) * 0.5)));
             
             const avgEar = earCount.current > 0 ? earSum.current / earCount.current : 0.28;
-            const burnoutPercent = Math.round(Math.max(0, Math.min(100, ((0.30 - avgEar) / 0.12) * 100)));
-
+            
+            // Eye Fatigue based on resting eyelid openness (0.30 = fully open, 0.22 = drooped/tired)
+            const eyeFatigue = Math.max(0, Math.min(100, ((0.30 - avgEar) / 0.08) * 100));
+            // Systemic Fatigue based on Heart Rate Variability (Low HRV = tired system)
+            const hrvFatigue = Math.max(0, Math.min(100, (100 - clampedHrv)));
+            
+            // Burnout is a balanced combination of Eye droopiness (60%) and Systemic stress (40%)
+            const burnoutPercent = Math.round((eyeFatigue * 0.6) + (hrvFatigue * 0.4));
             setFinalBpm(clampedBpm);
             setFinalHrv(clampedHrv);
             setFinalStress(stressPercent);
             setFinalBurnout(burnoutPercent);
             
-            setInsight(getHealthInsight(clampedBpm, clampedHrv, stressPercent, burnoutPercent, t));
+            // Extract from local storage to avoid stale closures
+            let age = 25;
+            let gender = 'male';
+            try {
+              const savedProfile = localStorage.getItem('bioMirrorProfile');
+              if (savedProfile) {
+                const parsed = JSON.parse(savedProfile);
+                age = parsed.age || 25;
+                gender = parsed.gender || 'male';
+              }
+            } catch (e) {
+              console.error(e);
+            }
+            
+            setInsight(getHealthInsight(clampedBpm, clampedHrv, stressPercent, burnoutPercent, t, age, gender));
             saveScanResult(clampedBpm, clampedHrv, stressPercent);
 
             if (faceMeshControlsRef.current) {
@@ -262,10 +290,12 @@ function App() {
           }
         }
       } else {
-        if (currentStatus === 'SCANNING') {
+        if (currentStatus === 'SCANNING' || currentStatus === 'CALIBRATING') {
           setLiveAlert('NO_FACE');
-          scanningFrames.current = Math.max(0, scanningFrames.current - 2);
-          setProgress(Math.min((scanningFrames.current / 300) * 100, 100));
+          if (currentStatus === 'SCANNING') {
+            scanningFrames.current = Math.max(0, scanningFrames.current - 2);
+            setProgress(Math.min((scanningFrames.current / 300) * 100, 100));
+          }
         }
       }
     };
@@ -284,157 +314,37 @@ function App() {
       
       <main className="flex-1 p-4 md:p-6 flex flex-col lg:flex-row gap-6 relative z-10 overflow-y-auto">
         
-        {/* The Cyber Mirror */}
-        <div className="flex-1 min-h-[40vh] lg:min-h-0 lg:max-w-md xl:max-w-lg relative flex items-center justify-center border border-cyber-border bg-black rounded-2xl overflow-hidden shadow-[0_8px_30px_rgba(0,0,0,0.5)]">
-          <CalibrationOverlay status={status} progress={progress} errorMsg={error} onStart={handleStartSystem} onCancel={handleCancelScan} />
-          
-          {/* Dynamic Warning HUD */}
-          {liveAlert && status === 'SCANNING' && (
-            <div className="absolute top-1/4 left-1/2 -translate-x-1/2 z-50 animate-pulse bg-red-900/80 border border-red-500 rounded-lg p-3 flex flex-col items-center">
-              <ShieldAlert className="text-red-500 mb-1" size={24} />
-              <span className="text-red-500 font-black tracking-widest text-[10px] text-center w-full max-w-[200px]">
-                {liveAlert === 'MOTION' ? t('alertMotion') : liveAlert === 'LOW_LIGHT' ? t('alertLowLight') : "FACE LOST"}
-              </span>
-            </div>
-          )}
-          
-          {/* Video and Canvas ALWAYS mounted to prevent videoRef.current from being null during startCamera */}
-          <div className={`absolute inset-0 w-full h-full ${status === 'COMPLETED' || status === 'IDLE' ? 'hidden' : 'block'}`}>
-            <video 
-              ref={videoRef}
-              className="absolute inset-0 w-full h-full object-cover"
-              style={{ transform: 'scaleX(-1)' }} 
-            />
-            <canvas 
-              ref={overlayRef}
-              className="absolute inset-0 w-full h-full object-cover pointer-events-none z-20"
-              style={{ transform: 'scaleX(-1)' }} 
-            />
-          </div>
-        </div>
+        <LiveScanner 
+          status={status} 
+          progress={progress} 
+          error={error} 
+          liveAlert={liveAlert} 
+          signalData={signalData} 
+          videoRef={videoRef} 
+          overlayRef={overlayRef} 
+          hologramRef={hologramRef} 
+          handleStartSystem={handleStartSystem} 
+          handleCancelScan={handleCancelScan} 
+        />
 
         {/* Metrics & Graph */}
         <div className="flex-1 flex flex-col gap-4 md:gap-6">
-          <div className={`flex-row justify-between flex-wrap gap-4 ${status === 'COMPLETED' ? 'flex' : 'hidden md:flex'}`}>
-            <VitalsCard 
-              title={t('heartRate')} 
-              value={status === 'COMPLETED' ? finalBpm : null} 
-              unit="BPM" 
-              status={status === 'COMPLETED' ? (finalBpm > 100 ? t('high') : finalBpm < 60 ? t('low') : t('normal')) : (status === 'IDLE' ? t('standby') : t('scanning'))} 
-              color={status === 'COMPLETED' ? (finalBpm > 100 || finalBpm < 60 ? 'orange' : 'cyan') : 'cyan'} 
-              range="60 - 100"
-            />
-            <VitalsCard 
-              title={t('heartRateVar')} 
-              value={status === 'COMPLETED' ? finalHrv : null} 
-              unit="MS" 
-              status={status === 'COMPLETED' ? (finalHrv < 20 ? t('low') : finalHrv > 100 ? t('unusual') : t('optimal')) : (status === 'IDLE' ? t('standby') : '--')} 
-              color={status === 'COMPLETED' ? (finalHrv < 20 || finalHrv > 100 ? 'orange' : 'blue') : 'blue'} 
-              range="20 - 100"
-            />
-            <VitalsCard 
-              title={t('stressLevel')} 
-              value={status === 'COMPLETED' ? finalStress : null} 
-              unit="%" 
-              status={status === 'COMPLETED' ? (finalStress > 60 ? t('high') : t('normal')) : (status === 'IDLE' ? t('standby') : t('analyzing'))} 
-              color={status === 'COMPLETED' ? (finalStress > 60 ? 'orange' : 'green') : 'green'} 
-              range="0 - 60"
-            />
-            <VitalsCard 
-              title={t('burnoutIndex')} 
-              value={status === 'COMPLETED' ? finalBurnout : null} 
-              unit="%" 
-              status={status === 'COMPLETED' ? (finalBurnout > 50 ? t('fatigueHigh') : t('fatigueNormal')) : (status === 'IDLE' ? t('standby') : '--')} 
-              color={status === 'COMPLETED' ? (finalBurnout > 50 ? 'orange' : 'purple') : 'purple'} 
-              range="0 - 50"
-            />
-          </div>
-          
-          {/* Dynamic Medical Insight Alert */}
-          {status === 'COMPLETED' && insight && (
-            <div className={`w-full p-4 rounded-xl border flex flex-col sm:flex-row items-start sm:items-center justify-between space-y-4 sm:space-y-0 sm:space-x-4 animate-fade-in ${insight.bg} ${insight.border} shadow-[0_0_15px_rgba(0,0,0,0.2)]`}>
-              <div className="flex items-start space-x-4">
-                <div className="shrink-0 mt-1">
-                  <insight.icon size={24} className={insight.color} />
-                </div>
-                <div>
-                  <h4 className={`text-xs font-black tracking-widest uppercase mb-1 ${insight.color}`}>{insight.title}</h4>
-                  <p className="text-gray-300 text-[10px] md:text-xs font-mono leading-relaxed">{insight.msg}</p>
-                </div>
-              </div>
-              
-              {insight.healable && (
-                <button 
-                  onClick={() => setShowHealer(true)}
-                  className="shrink-0 btn-cyber px-4 py-2 text-[10px] bg-orange-500/20 text-orange-500 border-orange-500 hover:bg-orange-500/40 hover:shadow-[0_0_15px_#ff8c00] flex items-center space-x-2"
-                >
-                  <Activity size={14} />
-                  <span>{t('healingMode')}</span>
-                </button>
-              )}
-            </div>
-          )}
-
-          {status === 'COMPLETED' && (
-            <WrappedCard 
-              bpm={finalBpm} 
-              hrv={finalHrv} 
-              stress={finalStress} 
-              burnout={finalBurnout} 
-            />
-          )}
+          <ResultSummary 
+            status={status}
+            finalBpm={finalBpm}
+            finalHrv={finalHrv}
+            finalStress={finalStress}
+            finalBurnout={finalBurnout}
+            insight={insight}
+            setShowHealer={setShowHealer}
+          />
 
           {/* Lower Section: 3D Hologram + ECG Graph */}
-          <div className="flex flex-row gap-2 md:gap-6 flex-1 min-h-[150px] md:min-h-[200px]">
-            
-            {/* 3D Hologram Twin */}
-            <div className="w-1/2 md:w-1/3 bg-black rounded-2xl border border-cyber-border p-2 md:p-4 shadow-lg flex flex-col relative overflow-hidden group">
-              <div className="flex items-center justify-between z-10 mb-2">
-                <h3 className="text-gray-400 text-[8px] md:text-[10px] font-bold uppercase tracking-widest pl-1 md:pl-2 flex items-center space-x-1 md:space-x-2">
-                  <div className={`w-1.5 h-1.5 md:w-2 md:h-2 rounded-full ${status === 'COMPLETED' || status === 'IDLE' ? 'bg-gray-600' : 'bg-cyber-purple animate-pulse'}`}></div>
-                  <span className="truncate">{t('digitalTwin')}</span>
-                </h3>
-                
-                <div className="relative group/info cursor-help hidden md:block">
-                  <Info size={14} className="text-gray-500 hover:text-cyber-purple transition-colors" />
-                  <div className="absolute top-full right-0 mt-2 w-56 opacity-0 group-hover/info:opacity-100 transition-opacity duration-200 pointer-events-none z-50">
-                    <div className="bg-cyber-dark border border-cyber-purple/50 p-3 rounded-lg shadow-[0_0_15px_rgba(184,0,255,0.3)] text-left relative">
-                      <div className="absolute -top-1.5 right-1 w-3 h-3 bg-cyber-dark border-t border-l border-cyber-purple/50 rotate-45"></div>
-                      <h4 className="text-cyber-purple font-bold text-[10px] mb-1">{t('twinInfoTitle')}</h4>
-                      <p className="text-gray-300 font-mono text-[9px] leading-relaxed">{t('twinInfoDesc')}</p>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              <div className="flex-1 relative rounded-xl overflow-hidden bg-[#07090f] flex items-center justify-center border border-cyber-purple/20 group-hover:border-cyber-purple/50 transition-colors">
-                <div className="absolute inset-0 bg-[linear-gradient(rgba(0,240,255,0.05)_1px,transparent_1px),linear-gradient(90deg,rgba(0,240,255,0.05)_1px,transparent_1px)] bg-[size:15px_15px]"></div>
-                
-                {/* Live Metrics HUD */}
-                <div className="absolute top-1 left-1 md:top-2 md:left-2 flex flex-col z-20 pointer-events-none opacity-60">
-                   <span className="text-[5px] md:text-[7px] font-mono text-cyber-purple tracking-widest">{t('twinNodes')}</span>
-                </div>
-
-                <canvas 
-                  ref={hologramRef} 
-                  className="z-10 w-full h-full object-contain drop-shadow-[0_0_15px_rgba(0,240,255,0.5)]" 
-                  style={{ transform: 'scaleX(-1)' }} 
-                />
-              </div>
-            </div>
-
-            {/* Medical ECG Monitor */}
-            <div className="flex-1 w-1/2 md:w-full bg-black rounded-2xl border border-cyber-border p-2 md:p-4 shadow-lg flex flex-col relative overflow-hidden">
-              <h3 className="text-gray-400 text-[8px] md:text-[10px] font-bold uppercase tracking-widest mb-2 md:mb-4 pl-1 md:pl-2 flex items-center space-x-1 md:space-x-2 z-10">
-                <div className={`w-1.5 h-1.5 md:w-2 md:h-2 rounded-full ${status === 'COMPLETED' || status === 'IDLE' ? 'bg-gray-600' : 'bg-cyber-cyan animate-pulse'}`}></div>
-                <span className="truncate">{t('ecgScanner')}</span>
-              </h3>
-              <div className="flex-1 relative rounded-xl overflow-hidden bg-[#001100]">
-                <PulseCanvas data={signalData} isCompleted={status === 'COMPLETED' || status === 'IDLE'} />
-              </div>
-            </div>
-
-          </div>
+          <HologramEcg 
+            status={status} 
+            hologramRef={hologramRef} 
+            signalData={signalData} 
+          />
           
           {/* Spacer for mobile scrolling */}
           <div className="h-12 w-full flex items-center justify-center opacity-30 mt-4 pb-4">
@@ -445,6 +355,7 @@ function App() {
       </main>
       <HistoryModal isOpen={isHistoryOpen} onClose={() => setIsHistoryOpen(false)} />
       <AboutModal isOpen={isAboutOpen} onClose={() => setIsAboutOpen(false)} />
+      <UserProfileModal isOpen={isProfileModalOpen} onComplete={() => { setIsProfileModalOpen(false); handleStartSystem(true); }} />
       {showHealer && <BioHealer onClose={() => setShowHealer(false)} />}
       
       {/* DEVELOPER FAST-FORWARD BUTTON */}

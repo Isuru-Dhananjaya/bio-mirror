@@ -16,6 +16,12 @@ export const initializeFaceMesh = (videoElement, onResultsCallback) => {
 
   let isRunning = true;
   let lastVideoTime = -1;
+  let frameCount = 0;
+  
+  // Offscreen canvas for massive FPS boost (Downscaling)
+  const processingCanvas = document.createElement('canvas');
+  const MAX_DIM = 320; // Slightly higher for better accuracy, still extremely fast
+  const pCtx = processingCanvas.getContext('2d', { willReadFrequently: true });
 
   const tick = async () => {
     if (!isRunning) return;
@@ -24,8 +30,31 @@ export const initializeFaceMesh = (videoElement, onResultsCallback) => {
     if (videoElement && videoElement.readyState >= 2 && videoElement.videoWidth > 0) {
       if (videoElement.currentTime !== lastVideoTime) {
         lastVideoTime = videoElement.currentTime;
+        
+        const vW = videoElement.videoWidth;
+        const vH = videoElement.videoHeight;
+        
+        // Maintain aspect ratio
+        let pWidth = MAX_DIM;
+        let pHeight = MAX_DIM;
+        if (vW > vH) {
+          pHeight = Math.floor((vH / vW) * MAX_DIM);
+        } else {
+          pWidth = Math.floor((vW / vH) * MAX_DIM);
+        }
+        
+        processingCanvas.width = pWidth;
+        processingCanvas.height = pHeight;
+
         try {
-          await faceMesh.send({ image: videoElement });
+          // Draw video maintaining aspect ratio
+          pCtx.drawImage(videoElement, 0, 0, pWidth, pHeight);
+          
+          // AI Optimization: Skip inference every other frame to halve CPU usage
+          frameCount++;
+          if (frameCount % 2 === 0) {
+            await faceMesh.send({ image: processingCanvas });
+          }
         } catch (err) {
           console.error("FaceMesh Error:", err);
         }
@@ -153,9 +182,9 @@ export function drawFaceMesh(ctx, face, width, height, status) {
   };
   
   // Forehead and Cheeks (Where blood flow is extracted)
-  drawNode(10);
-  drawNode(234);
-  drawNode(454);
+  drawNode(151); // Forehead Center
+  drawNode(205); // Left Cheek
+  drawNode(425); // Right Cheek
   
   // Face Bounding Target
   const minX = Math.min(...face.map(p => p.x)) * width - 20;

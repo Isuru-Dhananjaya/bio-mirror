@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Volume2, VolumeX, X } from 'lucide-react';
 import { useLanguage } from '../context/LanguageContext';
 import { startAmbientMusic, updateAmbientMusic, stopAmbientMusic, toggleMute, getIsMuted, initAudio } from '../utils/audioHelper';
+import HolographicHead from './HolographicHead';
 
 export default function BioHealer({ onClose }) {
   const { t } = useLanguage();
@@ -126,31 +127,11 @@ export default function BioHealer({ onClose }) {
         </p>
       </div>
 
-      {/* Sacred Geometry Hologram */}
-      <div className="relative w-48 h-48 md:w-64 md:h-64 flex items-center justify-center mb-16">
+      {/* Sacred Geometry Hologram replaced with Meditating Human Visual */}
+      <div className="relative w-64 h-64 md:w-80 md:h-80 flex items-center justify-center mb-16">
         
-        {/* Dynamic Breathing Mandala */}
-        <div 
-          className="relative w-24 h-24 md:w-32 md:h-32 flex items-center justify-center z-10 rounded-full"
-          style={getTransformStyle()}
-        >
-          
-          {/* Layer 1: Liquid Lotus Petals (Spinning slowly) */}
-          <div className={`absolute inset-[-20%] rounded-[40%] bg-gradient-to-tr opacity-[0.35] blur-[3px] animate-[spin_10s_linear_infinite] transition-colors duration-[3000ms] ${getGlowColors()}`}></div>
-          
-          {/* Layer 2: Counter-spinning Petals */}
-          <div className={`absolute inset-[-10%] rounded-[45%] bg-gradient-to-bl opacity-[0.45] blur-[2px] animate-[spin_15s_linear_infinite_reverse] transition-colors duration-[3000ms] ${getGlowColors()}`}></div>
-          
-          {/* Layer 3: Inner Sacred Ring */}
-          <div className="absolute inset-2 rounded-[35%] border border-white/20 animate-[spin_25s_linear_infinite]"></div>
-          <div className="absolute inset-4 rounded-full border border-white/10 border-dashed animate-[spin_20s_linear_infinite_reverse]"></div>
-
-          {/* Solid Glowing Core */}
-          <div className="absolute inset-6 rounded-full bg-black/20 backdrop-blur-md border border-white/10 flex items-center justify-center">
-            {/* Core Pulse */}
-            <div className={`absolute inset-0 rounded-full animate-ping opacity-30 bg-gradient-to-t transition-colors duration-[3000ms] ${getGlowColors()}`} style={{ animationDuration: '3s' }}></div>
-          </div>
-        </div>
+        {/* Dynamic Breathing Visuals */}
+        <HolographicHead phase={state.phase} />
 
         {/* Text inside the Hologram (Fixed position so it doesn't scale) */}
         <div className="absolute z-20 text-center pointer-events-none flex flex-col items-center justify-center">
