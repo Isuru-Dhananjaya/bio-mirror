@@ -47,8 +47,8 @@ export const AuthProvider = ({ children }) => {
     return unsubscribe;
   }, []);
 
-  const saveProfile = async (age, gender) => {
-    const profile = { age, gender };
+  const saveProfile = async (age, gender, height = 170, weight = 65) => {
+    const profile = { age, gender, height, weight };
     setUserProfile(profile);
     localStorage.setItem('bioMirrorProfile', JSON.stringify(profile));
 

@@ -101,15 +101,19 @@ function App() {
     if (status === 'COMPLETED' && finalBpm !== null) {
       let age = 25;
       let gender = 'male';
+      let height = null;
+      let weight = null;
       try {
         const savedProfile = localStorage.getItem('bioMirrorProfile');
         if (savedProfile) {
           const parsed = JSON.parse(savedProfile);
           age = parsed.age || 25;
           gender = parsed.gender || 'male';
+          height = parsed.height || null;
+          weight = parsed.weight || null;
         }
       } catch (e) {}
-      setInsight(getHealthInsight(finalBpm, finalHrv, finalStress, finalBurnout, t, age, gender));
+      setInsight(getHealthInsight(finalBpm, finalHrv, finalStress, finalBurnout, t, age, gender, height, weight));
     }
   }, [t, status, finalBpm, finalHrv, finalStress, finalBurnout]);
 
@@ -289,18 +293,22 @@ function App() {
             // Extract from local storage to avoid stale closures
             let age = 25;
             let gender = 'male';
+            let height = null;
+            let weight = null;
             try {
               const savedProfile = localStorage.getItem('bioMirrorProfile');
               if (savedProfile) {
                 const parsed = JSON.parse(savedProfile);
                 age = parsed.age || 25;
                 gender = parsed.gender || 'male';
+                height = parsed.height || null;
+                weight = parsed.weight || null;
               }
             } catch (e) {
               console.error(e);
             }
             
-            setInsight(getHealthInsight(clampedBpm, clampedHrv, stressPercent, burnoutPercent, t, age, gender));
+            setInsight(getHealthInsight(clampedBpm, clampedHrv, stressPercent, burnoutPercent, t, age, gender, height, weight));
             saveScanResult(clampedBpm, clampedHrv, stressPercent, rawConfidence);
 
             if (faceMeshControlsRef.current) {

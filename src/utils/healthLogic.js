@@ -1,6 +1,6 @@
 import { Info, AlertCircle, CheckCircle2 } from 'lucide-react';
 
-export const getHealthInsight = (bpm, hrv, stress, burnout, t, age, gender) => {
+export const getHealthInsight = (bpm, hrv, stress, burnout, t, age, gender, height, weight) => {
   if (!bpm || !hrv) return null;
 
   // Set baselines based on Age and Gender (simplified medical heuristics)
@@ -22,6 +22,23 @@ export const getHealthInsight = (bpm, hrv, stress, burnout, t, age, gender) => {
     // Women typically have a slightly higher resting heart rate (approx 2-3 bpm higher)
     maxBpmThreshold += 3;
     athleticBpmThreshold += 3;
+  }
+
+  // Adjust thresholds based on BMI if height & weight exist
+  if (height && weight) {
+    const hMeters = height / 100;
+    const bmi = weight / (hMeters * hMeters);
+    if (bmi > 30) {
+      // Obese individuals typically have a higher resting heart rate naturally
+      maxBpmThreshold += 8;
+      athleticBpmThreshold += 5;
+    } else if (bmi > 25) {
+      maxBpmThreshold += 4;
+      athleticBpmThreshold += 3;
+    } else if (bmi < 18.5) {
+      // Underweight might also shift baseline up slightly due to efficiency drop
+      maxBpmThreshold += 2;
+    }
   }
 
   // CRITICAL WARNINGS (Overrides everything else)
