@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { Download, X, Smartphone, Monitor, Apple } from 'lucide-react';
 import { useLanguage } from '../context/LanguageContext';
 
@@ -57,18 +58,15 @@ export default function InstallPrompt() {
       </button>
 
       {/* Full-screen blocking overlay */}
-      {showManualModal && (
-        <div
-          className="fixed inset-0 bg-black/90 backdrop-blur-sm flex items-center justify-center p-4"
-          style={{ zIndex: 99999 }}
+      {showManualModal && createPortal(
+        <div 
+          className="fixed inset-0 z-[99999] bg-black/90 backdrop-blur-sm flex items-center justify-center p-4"
           onClick={(e) => { if (e.target === e.currentTarget) setShowManualModal(false); }}
         >
-          <div
-            className="relative w-full max-w-sm bg-[#07090f] border border-cyber-cyan/50 rounded-2xl shadow-[0_0_40px_rgba(0,240,255,0.2)] overflow-hidden max-h-[90vh] overflow-y-auto"
-            style={{ zIndex: 100000 }}
-          >
-            {/* Header */}
-            <div className="flex items-center justify-between p-5 border-b border-cyber-cyan/20">
+          <div className="w-full max-w-sm bg-[#07090f] border border-cyber-cyan/50 rounded-2xl shadow-[0_0_40px_rgba(0,240,255,0.2)] flex flex-col max-h-[90vh]">
+            
+            {/* Header (Fixed) */}
+            <div className="shrink-0 flex items-center justify-between p-5 border-b border-cyber-cyan/20">
               <div className="flex items-center space-x-3">
                 <div className="p-2 bg-cyber-cyan/10 rounded-lg border border-cyber-cyan/30">
                   <Download size={18} className="text-cyber-cyan" />
@@ -86,8 +84,8 @@ export default function InstallPrompt() {
               </button>
             </div>
 
-            {/* Steps */}
-            <div className="p-5 space-y-3">
+            {/* Steps (Scrollable) */}
+            <div className="overflow-y-auto p-5 space-y-3">
               <p className="text-gray-400 text-xs font-mono text-center mb-4">
                 {t('noApkNeeded')}
               </p>
@@ -136,8 +134,8 @@ export default function InstallPrompt() {
               </div>
             </div>
 
-            {/* Footer */}
-            <div className="px-5 pb-5">
+            {/* Footer (Fixed) */}
+            <div className="shrink-0 px-5 pb-5 pt-2">
               <button
                 onClick={() => setShowManualModal(false)}
                 className="w-full py-3 bg-cyber-cyan text-black font-black tracking-widest rounded-xl hover:bg-white transition-colors text-sm uppercase"
@@ -145,8 +143,10 @@ export default function InstallPrompt() {
                 {t('closeBtn')}
               </button>
             </div>
+
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </>
   );

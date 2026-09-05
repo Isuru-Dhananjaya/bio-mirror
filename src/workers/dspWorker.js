@@ -5,6 +5,14 @@ let timeBuffer = [];
 const BUFFER_SIZE = 300; // ~5-10 seconds window
 
 self.onmessage = function (e) {
+  if (e.data.type === 'RESET') {
+    rBuffer = [];
+    gBuffer = [];
+    bBuffer = [];
+    timeBuffer = [];
+    return;
+  }
+
   if (e.data.type === 'NEW_FRAME') {
     const { r, g, b, timestamp } = e.data.payload;
     

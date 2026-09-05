@@ -1,6 +1,4 @@
-import React from 'react';
-
-export default function HolographicHead({ phase }) {
+export default function HolographicHead({ phase, cycleConfig = { inhale: 4, hold: 2, exhale: 6 } }) {
   // Use much softer, meditative colors
   const getColor = () => {
     if (phase === 'inhale') return '#38bdf8'; // Soft Sky Blue
@@ -102,7 +100,7 @@ export default function HolographicHead({ phase }) {
               className="opacity-80"
               style={{
                 transformOrigin: `${n.x}px ${n.y}px`,
-                animation: i === 8 && phase === 'hold' ? 'softPulse 2s ease-in-out infinite alternate' : 'none'
+                animation: i === 8 && phase === 'hold' ? `softPulse ${cycleConfig.hold}s ease-in-out infinite alternate` : 'none'
               }}
             />
           ))}
@@ -118,9 +116,9 @@ export default function HolographicHead({ phase }) {
           style={{ 
             borderColor: color, 
             boxShadow: `0 0 15px ${color}, inset 0 0 15px ${color}`,
-            animation: phase === 'inhale' ? 'scanUp 4s ease-in-out forwards' : 
-                       phase === 'exhale' ? 'scanDown 6s ease-in-out forwards' : 
-                       'scanHold 2s ease-in-out forwards' // Hold state stays still and glows
+            animation: phase === 'inhale' ? `scanUp ${cycleConfig.inhale}s ease-in-out forwards` : 
+                       phase === 'exhale' ? `scanDown ${cycleConfig.exhale}s ease-in-out forwards` : 
+                       `scanHold ${cycleConfig.hold}s ease-in-out forwards` // Hold state stays still and glows
           }}
         ></div>
       </div>

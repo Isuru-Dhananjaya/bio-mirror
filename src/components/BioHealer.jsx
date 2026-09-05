@@ -4,15 +4,24 @@ import { useLanguage } from '../context/LanguageContext';
 import { startAmbientMusic, updateAmbientMusic, stopAmbientMusic, toggleMute, getIsMuted, initAudio } from '../utils/audioHelper';
 import HolographicHead from './HolographicHead';
 
-export default function BioHealer({ onClose }) {
+export default function BioHealer({ onClose, userBpm = 75 }) {
   const { t } = useLanguage();
   const [muted, setMuted] = useState(() => getIsMuted());
   
-  // State with gentle preparation phase ('ready' -> 'inhale' -> 'hold' -> 'exhale')
+  // Smart Breathing Logic based on user BPM
+  // Normal cycle is 4-2-6. If highly stressed (BPM > 90), we start slightly faster
+  // so the user can comfortably catch the rhythm, and we slow it down gradually.
+  const [cycleConfig, setCycleConfig] = useState(() => {
+    if (userBpm > 100) return { inhale: 3, hold: 1, exhale: 4 }; // Stressed: 8s cycle
+    if (userBpm > 85) return { inhale: 4, hold: 2, exhale: 5 };  // Elevated: 11s cycle
+    return { inhale: 4, hold: 2, exhale: 6 };                    // Normal: 12s cycle
+  });
+
   const [state, setState] = useState({
     phase: 'ready',
     timer: 3,
-    quoteIndex: 1
+    quoteIndex: 1,
+    cyclesCompleted: 0
   });
 
   const lastPlayedPhase = useRef(null);
@@ -34,28 +43,45 @@ export default function BioHealer({ onClose }) {
     }
   }, [state.phase]);
 
+  // Gradually slow down the cycle config every 2 cycles to guide user to relaxation
+  useEffect(() => {
+    if (state.cyclesCompleted > 0 && state.cyclesCompleted % 2 === 0) {
+      setCycleConfig(current => {
+        const nextInhale = Math.min(current.inhale + 1, 5);
+        const nextHold = Math.min(current.hold + 1, 2);
+        const nextExhale = Math.min(current.exhale + 1, 8);
+        return { inhale: nextInhale, hold: nextHold, exhale: nextExhale };
+      });
+    }
+  }, [state.cyclesCompleted]);
+
   useEffect(() => {
     const interval = setInterval(() => {
       setState((s) => {
         if (s.timer > 1) {
           return { ...s, timer: s.timer - 1 };
         } else {
-          // Transition Logic: 3s Ready -> 4s Inhale -> 2s Hold -> 6s Exhale
+          // Transition Logic based on Dynamic Cycle Config
           if (s.phase === 'ready') {
-            return { ...s, phase: 'inhale', timer: 4 };
+            return { ...s, phase: 'inhale', timer: cycleConfig.inhale };
           } else if (s.phase === 'inhale') {
-            return { ...s, phase: 'hold', timer: 2 };
+            return { ...s, phase: 'hold', timer: cycleConfig.hold };
           } else if (s.phase === 'hold') {
-            return { ...s, phase: 'exhale', timer: 6 };
+            return { ...s, phase: 'exhale', timer: cycleConfig.exhale };
           } else {
-            return { phase: 'inhale', timer: 4, quoteIndex: (s.quoteIndex % 5) + 1 };
+            return { 
+              phase: 'inhale', 
+              timer: cycleConfig.inhale, 
+              quoteIndex: (s.quoteIndex % 5) + 1,
+              cyclesCompleted: s.cyclesCompleted + 1
+            };
           }
         }
       });
     }, 1000);
 
     return () => clearInterval(interval);
-  }, []);
+  }, [cycleConfig]);
 
   const handleToggleSound = () => {
     const newMuted = toggleMute();
@@ -75,9 +101,9 @@ export default function BioHealer({ onClose }) {
 
   const getTransformStyle = () => {
     if (state.phase === 'ready') return { transform: 'scale(1.1)', transition: 'transform 3s ease-in-out' };
-    if (state.phase === 'inhale') return { transform: 'scale(2.4)', transition: 'transform 4s ease-in-out' };
-    if (state.phase === 'hold') return { transform: 'scale(2.4)', transition: 'transform 2s linear' };
-    return { transform: 'scale(0.8)', transition: 'transform 6s ease-in-out' };
+    if (state.phase === 'inhale') return { transform: 'scale(2.4)', transition: `transform ${cycleConfig.inhale}s ease-in-out` };
+    if (state.phase === 'hold') return { transform: 'scale(2.4)', transition: `transform ${cycleConfig.hold}s linear` };
+    return { transform: 'scale(0.8)', transition: `transform ${cycleConfig.exhale}s ease-in-out` };
   };
 
   const getGlowColors = () => {
@@ -131,7 +157,7 @@ export default function BioHealer({ onClose }) {
       <div className="relative w-64 h-64 md:w-80 md:h-80 flex items-center justify-center mb-16">
         
         {/* Dynamic Breathing Visuals */}
-        <HolographicHead phase={state.phase} />
+        <HolographicHead phase={state.phase} cycleConfig={cycleConfig} />
 
         {/* Text inside the Hologram (Fixed position so it doesn't scale) */}
         <div className="absolute z-20 text-center pointer-events-none flex flex-col items-center justify-center">

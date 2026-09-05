@@ -5,7 +5,7 @@ import WrappedCard from './WrappedCard';
 import VitalsCard from './VitalsCard';
 
 export default function ResultSummary({ 
-  status, finalBpm, finalHrv, finalStress, finalBurnout, finalConfidence, insight, setShowHealer 
+  status, finalBpm, finalHrv, finalStress, finalBurnout, finalConfidence, insight, setShowHealer, onScanAgain 
 }) {
   const { t } = useLanguage();
   
@@ -84,13 +84,22 @@ export default function ResultSummary({
       )}
 
       {status === 'COMPLETED' && (
-        <WrappedCard 
-          bpm={finalBpm} 
-          hrv={finalHrv} 
-          stress={finalStress} 
-          burnout={finalBurnout}
-          confidence={finalConfidence}
-        />
+        <div className="flex flex-col space-y-4 animate-fade-in w-full">
+          <WrappedCard 
+            bpm={finalBpm} 
+            hrv={finalHrv} 
+            stress={finalStress} 
+            burnout={finalBurnout}
+            confidence={finalConfidence}
+          />
+          <button 
+            onClick={onScanAgain}
+            className="w-full py-4 mt-2 bg-cyber-cyan text-black font-black uppercase tracking-widest rounded-xl hover:bg-white hover:shadow-[0_0_25px_rgba(0,240,255,0.6)] transition-all flex justify-center items-center space-x-2"
+          >
+            <Activity size={18} />
+            <span>{t('startNewScan')}</span>
+          </button>
+        </div>
       )}
     </>
   );

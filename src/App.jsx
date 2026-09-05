@@ -1,6 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
 import Header from './components/Header';
-import VitalsCard from './components/VitalsCard';
 import PulseCanvas from './components/PulseCanvas';
 import CalibrationOverlay from './components/CalibrationOverlay';
 import HistoryModal from './components/HistoryModal';
@@ -10,7 +9,6 @@ import ResultSummary from './components/ResultSummary';
 import HologramEcg from './components/HologramEcg';
 import AboutModal from './components/AboutModal';
 import UserProfileModal from './components/UserProfileModal';
-import WrappedCard from './components/WrappedCard';
 import { useCamera } from './hooks/useCamera';
 import { initializeFaceMesh, drawFaceMesh, drawHologram, processFaceData } from './vision/faceTracking';
 import { playThump, initAudio } from './utils/audioHelper';
@@ -125,14 +123,26 @@ function App() {
       return;
     }
     initAudio();
+    
+    // FULL RESET FOR NEW SCAN
+    workerRef.current?.postMessage({ type: 'RESET' });
     setStatus('REQUESTING_CAMERA');
+    setProgress(0);
     setInsight(null);
     setLiveAlert(null);
+    setFinalBpm(null);
+    setFinalHrv(null);
+    setFinalStress(null);
     setFinalBurnout(null);
+    setFinalConfidence(null);
+    setSignalData([]);
+    
     scanningFrames.current = 0;
     calibratingFrames.current = 0;
     earSum.current = 0;
     earCount.current = 0;
+    tempVitals.current = { bpm: null, hrv: null, confidence: null };
+    
     startCamera();
   };
 
@@ -366,6 +376,7 @@ function App() {
             finalConfidence={finalConfidence}
             insight={insight}
             setShowHealer={setShowHealer}
+            onScanAgain={handleStartSystem}
           />
 
           {/* Lower Section: 3D Hologram + ECG Graph */}
@@ -384,8 +395,12 @@ function App() {
       </main>
       <HistoryModal isOpen={isHistoryOpen} onClose={() => setIsHistoryOpen(false)} />
       <AboutModal isOpen={isAboutOpen} onClose={() => setIsAboutOpen(false)} />
-      <UserProfileModal isOpen={isProfileModalOpen} onComplete={() => { setIsProfileModalOpen(false); handleStartSystem(true); }} />
-      {showHealer && <BioHealer onClose={() => setShowHealer(false)} />}
+      <UserProfileModal 
+        isOpen={isProfileModalOpen} 
+        onClose={() => setIsProfileModalOpen(false)}
+        onComplete={() => { setIsProfileModalOpen(false); handleStartSystem(true); }} 
+      />
+      {showHealer && <BioHealer onClose={() => setShowHealer(false)} userBpm={finalBpm} />}
       
       {/* DEVELOPER FAST-FORWARD BUTTON */}
       {import.meta.env.DEV && (

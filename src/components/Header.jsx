@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Activity, ShieldCheck, Camera, Volume2, VolumeX, LineChart as LineChartIcon, Globe, Info } from 'lucide-react';
+import { Activity, ShieldCheck, Camera, Volume2, VolumeX, LineChart as LineChartIcon, Globe, Info, User } from 'lucide-react';
 import { toggleMute } from '../utils/audioHelper';
 import InstallPrompt from './InstallPrompt';
 import { useLanguage } from '../context/LanguageContext';
@@ -54,7 +54,7 @@ export default function Header({ fps, onOpenHistory }) {
 
         {/* Profile Button */}
         <button onClick={() => window.dispatchEvent(new CustomEvent('open-profile'))} className="flex items-center space-x-1 text-white bg-cyber-dark px-2 py-1.5 rounded-full border border-cyber-cyan/30 hover:border-cyber-cyan hover:shadow-[0_0_10px_#00f0ff] transition-all">
-          <Activity size={14} className="text-cyber-cyan" />
+          <User size={14} className="text-cyber-cyan" />
         </button>
 
         {/* About App Button */}
