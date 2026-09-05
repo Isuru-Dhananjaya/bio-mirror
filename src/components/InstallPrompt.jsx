@@ -64,7 +64,7 @@ export default function InstallPrompt() {
           onClick={(e) => { if (e.target === e.currentTarget) setShowManualModal(false); }}
         >
           <div
-            className="relative w-full max-w-sm bg-[#07090f] border border-cyber-cyan/50 rounded-2xl shadow-[0_0_40px_rgba(0,240,255,0.2)] overflow-hidden"
+            className="relative w-full max-w-sm bg-[#07090f] border border-cyber-cyan/50 rounded-2xl shadow-[0_0_40px_rgba(0,240,255,0.2)] overflow-hidden max-h-[90vh] overflow-y-auto"
             style={{ zIndex: 100000 }}
           >
             {/* Header */}
@@ -74,8 +74,8 @@ export default function InstallPrompt() {
                   <Download size={18} className="text-cyber-cyan" />
                 </div>
                 <div>
-                  <h2 className="text-white font-black text-base tracking-widest uppercase">Install App</h2>
-                  <p className="text-cyber-cyan text-[9px] font-mono tracking-widest">BIO-MIRROR EDGE AI</p>
+                  <h2 className="text-white font-black text-base tracking-widest uppercase">{t('installAppTitle')}</h2>
+                  <p className="text-cyber-cyan text-[9px] font-mono tracking-widest">{t('installAppSubtitle')}</p>
                 </div>
               </div>
               <button
@@ -89,7 +89,7 @@ export default function InstallPrompt() {
             {/* Steps */}
             <div className="p-5 space-y-3">
               <p className="text-gray-400 text-xs font-mono text-center mb-4">
-                No APK needed. Install directly as a native app:
+                {t('noApkNeeded')}
               </p>
 
               {/* Android */}
@@ -98,10 +98,10 @@ export default function InstallPrompt() {
                   <Smartphone size={16} className="text-green-400" />
                 </div>
                 <div>
-                  <p className="text-white text-xs font-bold mb-1">Android (Chrome)</p>
+                  <p className="text-white text-xs font-bold mb-1">{t('androidTitle')}</p>
                   <p className="text-gray-400 text-[11px] leading-relaxed">
-                    Tap <span className="text-white font-bold">⋮</span> menu (top right) → select{' '}
-                    <span className="text-cyber-cyan font-bold">"Add to Home screen"</span>
+                    {t('androidDesc1')} <span className="text-white font-bold">⋮</span> {t('androidDesc2')}
+                    <span className="text-cyber-cyan font-bold">{t('androidDesc3')}</span>
                   </p>
                 </div>
               </div>
@@ -112,10 +112,10 @@ export default function InstallPrompt() {
                   <Apple size={16} className="text-gray-300" />
                 </div>
                 <div>
-                  <p className="text-white text-xs font-bold mb-1">iOS (Safari)</p>
+                  <p className="text-white text-xs font-bold mb-1">{t('iosTitle')}</p>
                   <p className="text-gray-400 text-[11px] leading-relaxed">
-                    Tap <span className="text-white font-bold">Share ⬆</span> button at the bottom → select{' '}
-                    <span className="text-cyber-cyan font-bold">"Add to Home Screen"</span>
+                    {t('iosDesc1')} <span className="text-white font-bold">Share ⬆</span> {t('iosDesc2')}
+                    <span className="text-cyber-cyan font-bold">{t('iosDesc3')}</span>
                   </p>
                 </div>
               </div>
@@ -126,11 +126,11 @@ export default function InstallPrompt() {
                   <Monitor size={16} className="text-blue-400" />
                 </div>
                 <div>
-                  <p className="text-white text-xs font-bold mb-1">Desktop (Chrome / Edge)</p>
+                  <p className="text-white text-xs font-bold mb-1">{t('desktopTitle')}</p>
                   <p className="text-gray-400 text-[11px] leading-relaxed">
-                    Click the{' '}
+                    {t('desktopDesc1')}
                     <span className="text-cyber-cyan font-bold">install icon ⬇</span>
-                    {' '}in the URL bar (next to the bookmark star)
+                    {t('desktopDesc2')}
                   </p>
                 </div>
               </div>
@@ -140,9 +140,9 @@ export default function InstallPrompt() {
             <div className="px-5 pb-5">
               <button
                 onClick={() => setShowManualModal(false)}
-                className="w-full py-3 bg-cyber-cyan text-black font-black tracking-widest rounded-xl hover:bg-white transition-colors text-sm"
+                className="w-full py-3 bg-cyber-cyan text-black font-black tracking-widest rounded-xl hover:bg-white transition-colors text-sm uppercase"
               >
-                GOT IT ✓
+                {t('closeBtn')}
               </button>
             </div>
           </div>

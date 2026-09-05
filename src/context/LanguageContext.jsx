@@ -78,7 +78,22 @@ const translations = {
     ready: "GET READY",
     readyPrompt: "Sit comfortably and relax your shoulders...",
     startHealing: "START SESSION",
-    exportCsv: "EXPORT CSV"
+    exportCsv: "EXPORT CSV",
+    installAppTitle: "Install App",
+    installAppSubtitle: "BIO-MIRROR EDGE AI",
+    noApkNeeded: "No APK needed. Install directly as a native app:",
+    androidTitle: "Android (Chrome)",
+    androidDesc1: "Tap ",
+    androidDesc2: " menu (top right) → select ",
+    androidDesc3: "\"Add to Home screen\"",
+    iosTitle: "iOS (Safari)",
+    iosDesc1: "Tap ",
+    iosDesc2: " button at the bottom → select ",
+    iosDesc3: "\"Add to Home Screen\"",
+    desktopTitle: "Desktop (Chrome / Edge)",
+    desktopDesc1: "Click the ",
+    desktopDesc2: " in the URL bar (next to the bookmark star)",
+    closeBtn: "CLOSE"
   },
   si: {
     title: "බයෝ-මිරර්",
@@ -157,7 +172,22 @@ const translations = {
     ready: "සූදානම් වන්න",
     readyPrompt: "සුවපහසුව වාඩි වී ඔබේ දෑස් සහ උරහිස් සැහැල්ලු කරගන්න...",
     startHealing: "සුවපත් වීම ආරම්භ කරන්න",
-    exportCsv: "දත්ත බාගත කරන්න (CSV)"
+    exportCsv: "දත්ත බාගත කරන්න (CSV)",
+    installAppTitle: "App එක ස්ථාපනය කරගන්න",
+    installAppSubtitle: "BIO-MIRROR EDGE AI",
+    noApkNeeded: "APK අවශ්‍ය නැත. කෙලින්ම App එකක් ලෙස ස්ථාපනය කරගන්න:",
+    androidTitle: "Android (Chrome)",
+    androidDesc1: "ඔබන්න ",
+    androidDesc2: " මෙනුව (දකුණු පස ඉහළ) → තෝරන්න ",
+    androidDesc3: "\"Add to Home screen\"",
+    iosTitle: "iOS (Safari)",
+    iosDesc1: "ඔබන්න ",
+    iosDesc2: " බොත්තම (පහළ) → තෝරන්න ",
+    iosDesc3: "\"Add to Home Screen\"",
+    desktopTitle: "Desktop (Chrome / Edge)",
+    desktopDesc1: "ක්ලික් කරන්න ",
+    desktopDesc2: " URL තීරුවේ (තරු ලකුණ අසල)",
+    closeBtn: "වසා දමන්න"
   },
   ta: {
     title: "பயோ-மிரர்",
@@ -236,7 +266,22 @@ const translations = {
     ready: "தயாராகுங்கள்",
     readyPrompt: "வசதியாக அமர்ந்து உங்கள் உடலை தளர்த்திக் கொள்ளுங்கள்...",
     startHealing: "தொடங்கவும்",
-    exportCsv: "பதிவிறக்க (CSV)"
+    exportCsv: "பதிவிறக்க (CSV)",
+    installAppTitle: "செயலியை நிறுவவும்",
+    installAppSubtitle: "BIO-MIRROR EDGE AI",
+    noApkNeeded: "APK தேவையில்லை. நேரடியாக செயலியாக நிறுவவும்:",
+    androidTitle: "Android (Chrome)",
+    androidDesc1: "அழுத்தவும் ",
+    androidDesc2: " மெனு (மேல் வலது) → தேர்ந்தெடுக்கவும் ",
+    androidDesc3: "\"Add to Home screen\"",
+    iosTitle: "iOS (Safari)",
+    iosDesc1: "அழுத்தவும் ",
+    iosDesc2: " பொத்தான் (கீழே) → தேர்ந்தெடுக்கவும் ",
+    iosDesc3: "\"Add to Home Screen\"",
+    desktopTitle: "Desktop (Chrome / Edge)",
+    desktopDesc1: "கிளிக் செய்யவும் ",
+    desktopDesc2: " URL பட்டியில் (நட்சத்திரக் குறிக்கு அருகில்)",
+    closeBtn: "மூடவும்"
   }
 };
 const LanguageContext = createContext();
