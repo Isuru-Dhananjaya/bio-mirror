@@ -12,7 +12,7 @@ export const AuthProvider = ({ children }) => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Load local profile data
+    // Load local profile data initially
     const savedProfile = localStorage.getItem('bioMirrorProfile');
     if (savedProfile) {
       try {
@@ -22,17 +22,46 @@ export const AuthProvider = ({ children }) => {
       }
     }
 
-    const unsubscribe = onAuthStateChanged(auth, (user) => {
+    const unsubscribe = onAuthStateChanged(auth, async (user) => {
       setCurrentUser(user);
+      
+      // If logged in, try to fetch profile from Firestore
+      if (user) {
+        try {
+          const { db } = await import('../lib/firebase');
+          const { doc, getDoc } = await import('firebase/firestore');
+          const docRef = doc(db, 'users', user.uid);
+          const docSnap = await getDoc(docRef);
+          
+          if (docSnap.exists()) {
+            const data = docSnap.data();
+            setUserProfile(data);
+            localStorage.setItem('bioMirrorProfile', JSON.stringify(data));
+          }
+        } catch (e) {
+          console.error("Error fetching Firestore profile:", e);
+        }
+      }
       setLoading(false);
     });
     return unsubscribe;
   }, []);
 
-  const saveProfile = (age, gender) => {
+  const saveProfile = async (age, gender) => {
     const profile = { age, gender };
     setUserProfile(profile);
     localStorage.setItem('bioMirrorProfile', JSON.stringify(profile));
+
+    // Save to Firestore if logged in
+    if (auth.currentUser) {
+      try {
+        const { db } = await import('../lib/firebase');
+        const { doc, setDoc } = await import('firebase/firestore');
+        await setDoc(doc(db, 'users', auth.currentUser.uid), profile, { merge: true });
+      } catch (e) {
+        console.error("Error saving profile to Firestore:", e);
+      }
+    }
   };
 
   const loginWithGoogle = async () => {
