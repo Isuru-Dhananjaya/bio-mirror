@@ -30,14 +30,18 @@ export default function InstallPrompt() {
   }, []);
 
   const handleInstall = async () => {
-    if (deferredPrompt) {
-      deferredPrompt.prompt();
-      const { outcome } = await deferredPrompt.userChoice;
-      if (outcome === 'accepted') {
-        setDeferredPrompt(null);
+    try {
+      if (deferredPrompt) {
+        await deferredPrompt.prompt();
+        const { outcome } = await deferredPrompt.userChoice;
+        if (outcome === 'accepted') {
+          setDeferredPrompt(null);
+        }
+      } else {
+        setShowManualModal(true);
       }
-    } else {
-      // If browser blocks the native prompt (like iOS/Safari or desktop Chrome if already dismissed), show manual instructions.
+    } catch (e) {
+      console.error("Install prompt error:", e);
       setShowManualModal(true);
     }
   };
@@ -49,10 +53,10 @@ export default function InstallPrompt() {
     <>
       <button 
         onClick={handleInstall}
-        className="ml-4 md:ml-8 flex items-center space-x-2 bg-cyber-cyan text-black border border-cyber-cyan px-3 md:px-5 py-2 rounded-lg font-black tracking-widest shadow-[0_0_15px_rgba(0,240,255,0.5)] hover:bg-white hover:border-white hover:shadow-[0_0_25px_rgba(255,255,255,0.8)] animate-pulse hover:animate-none transition-all transform hover:-translate-y-0.5"
+        className="ml-2 md:ml-8 flex items-center justify-center space-x-0 md:space-x-2 bg-cyber-cyan text-black border border-cyber-cyan p-2 md:px-5 md:py-2 rounded-lg font-black tracking-widest shadow-[0_0_15px_rgba(0,240,255,0.5)] hover:bg-white hover:border-white transition-all transform hover:-translate-y-0.5"
       >
         <Download size={16} />
-        <span className="text-[9px] md:text-xs uppercase">{t('install')}</span>
+        <span className="hidden md:inline text-xs uppercase">{t('install')}</span>
       </button>
 
       {showManualModal && (

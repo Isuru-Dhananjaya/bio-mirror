@@ -97,6 +97,22 @@ function App() {
     return () => workerRef.current?.terminate();
   }, []);
 
+  useEffect(() => {
+    if (status === 'COMPLETED' && finalBpm !== null) {
+      let age = 25;
+      let gender = 'male';
+      try {
+        const savedProfile = localStorage.getItem('bioMirrorProfile');
+        if (savedProfile) {
+          const parsed = JSON.parse(savedProfile);
+          age = parsed.age || 25;
+          gender = parsed.gender || 'male';
+        }
+      } catch (e) {}
+      setInsight(getHealthInsight(finalBpm, finalHrv, finalStress, finalBurnout, t, age, gender));
+    }
+  }, [t, status, finalBpm, finalHrv, finalStress, finalBurnout]);
+
   const handleStartSystem = (forceStart = false) => {
     // Prevent event object from being truthy
     const isForced = forceStart === true;
