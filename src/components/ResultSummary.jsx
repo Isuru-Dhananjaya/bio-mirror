@@ -5,12 +5,24 @@ import WrappedCard from './WrappedCard';
 import VitalsCard from './VitalsCard';
 
 export default function ResultSummary({ 
-  status, finalBpm, finalHrv, finalStress, finalBurnout, insight, setShowHealer 
+  status, finalBpm, finalHrv, finalStress, finalBurnout, finalConfidence, insight, setShowHealer 
 }) {
   const { t } = useLanguage();
   
   return (
     <>
+      {/* Accuracy Badge */}
+      {status === 'COMPLETED' && finalConfidence !== null && (
+        <div className="flex justify-end w-full animate-fade-in -mb-2 mt-[-10px] md:mt-0">
+          <div className="bg-black border border-cyber-cyan/50 text-cyber-cyan px-3 py-1 rounded-full flex items-center space-x-2 shadow-[0_0_10px_rgba(0,240,255,0.2)]">
+            <Activity size={12} className={finalConfidence > 80 ? 'text-green-400' : 'text-orange-400'} />
+            <span className="text-[10px] font-mono font-bold tracking-wider">
+              SCAN ACCURACY: {finalConfidence}%
+            </span>
+          </div>
+        </div>
+      )}
+
       <div className={`flex-row justify-between flex-wrap gap-4 ${status === 'COMPLETED' ? 'flex' : 'hidden md:flex'}`}>
         <VitalsCard 
           title={t('heartRate')} 
@@ -76,7 +88,8 @@ export default function ResultSummary({
           bpm={finalBpm} 
           hrv={finalHrv} 
           stress={finalStress} 
-          burnout={finalBurnout} 
+          burnout={finalBurnout}
+          confidence={finalConfidence}
         />
       )}
     </>

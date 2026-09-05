@@ -38,6 +38,7 @@ function App() {
   const [finalHrv, setFinalHrv] = useState(null);
   const [finalStress, setFinalStress] = useState(null);
   const [finalBurnout, setFinalBurnout] = useState(null);
+  const [finalConfidence, setFinalConfidence] = useState(null);
   const [insight, setInsight] = useState(null);
   const [showHealer, setShowHealer] = useState(false);
 
@@ -64,7 +65,7 @@ function App() {
   const lastThumpTime = useRef(0);
   const statusRef = useRef(status);
   
-  const tempVitals = useRef({ bpm: null, hrv: null });
+  const tempVitals = useRef({ bpm: null, hrv: null, confidence: null });
   const earSum = useRef(0);
   const earCount = useRef(0);
 
@@ -77,11 +78,11 @@ function App() {
     
     workerRef.current.onmessage = (e) => {
       if (e.data.type === 'DSP_RESULT' && statusRef.current !== 'COMPLETED') {
-        const { signal, bpm: newBpm, hrv: newHrv } = e.data.payload;
+        const { signal, bpm: newBpm, hrv: newHrv, confidence } = e.data.payload;
         if(signal) setSignalData(signal);
         
         if (newBpm) {
-          tempVitals.current = { bpm: newBpm, hrv: newHrv };
+          tempVitals.current = { bpm: newBpm, hrv: newHrv, confidence };
           
           const now = performance.now();
           const msPerBeat = (60 / newBpm) * 1000;
@@ -266,6 +267,9 @@ function App() {
             setFinalStress(stressPercent);
             setFinalBurnout(burnoutPercent);
             
+            const rawConfidence = tempVitals.current.confidence || 85;
+            setFinalConfidence(rawConfidence);
+            
             // Extract from local storage to avoid stale closures
             let age = 25;
             let gender = 'male';
@@ -281,7 +285,7 @@ function App() {
             }
             
             setInsight(getHealthInsight(clampedBpm, clampedHrv, stressPercent, burnoutPercent, t, age, gender));
-            saveScanResult(clampedBpm, clampedHrv, stressPercent);
+            saveScanResult(clampedBpm, clampedHrv, stressPercent, rawConfidence);
 
             if (faceMeshControlsRef.current) {
               faceMeshControlsRef.current.stop();
@@ -335,6 +339,7 @@ function App() {
             finalHrv={finalHrv}
             finalStress={finalStress}
             finalBurnout={finalBurnout}
+            finalConfidence={finalConfidence}
             insight={insight}
             setShowHealer={setShowHealer}
           />

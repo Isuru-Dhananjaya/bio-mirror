@@ -24,7 +24,7 @@ self.onmessage = function (e) {
     if (rBuffer.length > 60) {
       const chromSignal = applyCHROM(rBuffer, gBuffer, bBuffer);
       const filtered = bandpassFilter(chromSignal, 0.75, 3.0); // 45 to 180 BPM
-      const { bpm, hrv } = extractVitals(filtered, timeBuffer);
+      const { bpm, hrv, confidence } = extractVitals(filtered, timeBuffer);
 
       // Send latest 100 points for the ECG graph
       self.postMessage({
@@ -32,7 +32,8 @@ self.onmessage = function (e) {
         payload: {
           signal: filtered.slice(-100),
           bpm: bpm,
-          hrv: hrv
+          hrv: hrv,
+          confidence: confidence
         }
       });
     }
@@ -168,5 +169,15 @@ function extractVitals(signal, times) {
   // Clamp HRV to reasonable physiological bounds to prevent NaN or extreme spikes
   hrv = Math.min(150, Math.max(10, hrv));
 
-  return { bpm, hrv };
+  // Calculate Confidence Score based on Signal Quality (Clean beats vs Total detected peaks)
+  let confidence = 0;
+  if (rrIntervals.length > 0) {
+    const signalQuality = filteredRR.length / rrIntervals.length;
+    // Map signal quality ratio to a 75% - 99% confidence score, deducting points for too few total peaks
+    confidence = Math.round(75 + (signalQuality * 24));
+    if (validPeaks.length < 10) confidence -= (10 - validPeaks.length) * 2; 
+    confidence = Math.max(0, Math.min(99, confidence));
+  }
+
+  return { bpm, hrv, confidence };
 }

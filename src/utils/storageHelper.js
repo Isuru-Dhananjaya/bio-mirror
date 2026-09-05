@@ -3,7 +3,7 @@ import { collection, addDoc, getDocs, query, where, orderBy } from 'firebase/fir
 
 const STORAGE_KEY = 'bio_mirror_history';
 
-export const saveScanResult = async (bpm, hrv, stress) => {
+export const saveScanResult = async (bpm, hrv, stress, confidence) => {
   const user = auth.currentUser;
   const newEntry = {
     date: new Date().toISOString(),
@@ -12,6 +12,7 @@ export const saveScanResult = async (bpm, hrv, stress) => {
     bpm,
     hrv,
     stress,
+    confidence,
     createdAt: new Date().getTime() // Storing as timestamp number for easier ordering
   };
 
